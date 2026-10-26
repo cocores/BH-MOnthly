@@ -694,7 +694,17 @@ function reloadUser(){
   return user.reload().then(function(){ return auth.currentUser; });
 }
 
-function signOutUser(){ return signOut(auth); }
+function signOutUser(){ cloudLoaded = false; return signOut(auth); }
+
+// Uploads stay off until this sign-in's cloud copy has been read (see
+// syncDown/markCloudLoaded), so a page load can't push this browser's older
+// board over newer edits made on another device before they've been pulled.
+var cloudLoaded = false;
+function markCloudLoaded(){ cloudLoaded = true; }
+
+function reportStatus(ok, err){
+  window.dispatchEvent(new CustomEvent("monthlycloud:status", {detail:{ok:ok, error:err||null}}));
+}
 
 function onAuthChange(cb){
   onAuthStateChanged(auth, function(user){
@@ -706,19 +716,21 @@ function onAuthChange(cb){
       cb(null, "Only @BHphoto.com email addresses are allowed.");
       return;
     }
+    if(!user) cloudLoaded = false;
     cb(user);
   });
 }
 
 function syncUp(){
   var user = auth.currentUser;
-  if(!user) return Promise.resolve();
+  if(!user || !cloudLoaded) return Promise.resolve();
   var archive, year, board;
   try{ archive = JSON.parse(window.localStorage.getItem("board:index") || "[]"); }catch(e){ archive = []; }
   try{ year = JSON.parse(window.localStorage.getItem("board:yearend") || "[]"); }catch(e){ year = []; }
   try{ board = JSON.parse(window.localStorage.getItem("board:current") || "null"); }catch(e){ board = null; }
   return setDoc(doc(dbFs, "users", user.uid), { archive: archive, year: year, board: board, updatedAt: serverTimestamp() })
-    .catch(function(err){ console.error("Cloud sync failed:", err); });
+    .then(function(){ reportStatus(true); })
+    .catch(function(err){ console.error("Cloud sync failed:", err); reportStatus(false, err); });
 }
 
 function syncDown(){
@@ -733,7 +745,7 @@ window.MonthlyCloud = {
   isAllowedEmail: isAllowedEmail,
   signUp: signUp, signIn: signIn, signOut: signOutUser,
   resendVerification: resendVerification, resetPassword: resetPassword, reloadUser: reloadUser,
-  onAuthChange: onAuthChange, syncUp: syncUp, syncDown: syncDown
+  onAuthChange: onAuthChange, syncUp: syncUp, syncDown: syncDown, markCloudLoaded: markCloudLoaded
 };
 window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
 </script>
@@ -2425,6 +2437,7 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     if(!el) return;
     el.innerHTML = avatar(user.email, "Signed in") +
       '<span class="hint">'+esc(user.email)+'</span>' +
+      '<span class="hint" id="cloudStatus"></span>' +
       '<button type="button" class="btn" id="authSignOutToolbar">Sign out</button>';
     var out = $("authSignOutToolbar");
     if(out) out.addEventListener("click", function(){ manualSignOut(); });
@@ -2486,6 +2499,40 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     });
   }
 
+  function setCloudStatus(text, bad){
+    var el = $("cloudStatus");
+    if(!el) return;
+    el.textContent = text;
+    el.style.color = bad ? "var(--red)" : "";
+  }
+  window.addEventListener("monthlycloud:status", function(e){
+    var d = e.detail || {};
+    if(d.ok){ setCloudStatus("· Saved to account", false); return; }
+    var code = d.error && d.error.code;
+    setCloudStatus("· Not saved to account", true);
+    note(code==="permission-denied"
+      ? "Couldn't save to your account: Firestore denied the write. Publish firestore.rules in the Firebase console (Firestore Database → Rules). Your work is still saved in this browser."
+      : "Couldn't save to your account ("+((d.error && (d.error.code||d.error.message))||"unknown error")+"). Your work is still saved in this browser and will retry on your next edit.");
+  });
+
+  // Key-order-independent JSON, so a Firestore round trip (which doesn't keep
+  // map key order) still compares equal to what this browser has.
+  function stableJson(v){
+    if(Array.isArray(v)) return "["+v.map(stableJson).join(",")+"]";
+    if(v && typeof v==="object") return "{"+Object.keys(v).sort().filter(function(k){return v[k]!==undefined;})
+      .map(function(k){return JSON.stringify(k)+":"+stableJson(v[k]);}).join(",")+"}";
+    return JSON.stringify(v===undefined?null:v);
+  }
+  function localMatchesCloud(cloudDoc){
+    var archive, year, board;
+    try{ archive = JSON.parse(window.localStorage.getItem(IDX) || "[]"); }catch(e){ archive = []; }
+    year = loadYear();
+    try{ board = JSON.parse(window.localStorage.getItem(CURRENT_KEY) || "null"); }catch(e){ board = null; }
+    return stableJson(archive)===stableJson(cloudDoc.archive||[]) &&
+      stableJson(year)===stableJson(cloudDoc.year||[]) &&
+      stableJson(board)===stableJson(cloudDoc.board||null);
+  }
+
   function handleCloudAuth(user, errMsg){
     if(errMsg){ stopSessionTimer(); showAuthView("login"); $("authNotice").textContent = errMsg; return; }
     if(!user){ stopSessionTimer(); showAuthView("login"); return; }
@@ -2498,13 +2545,26 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     showAuthView("app");
     renderAccountChip(user);
     startSessionTimer();
+    setCloudStatus("· Loading…", false);
     window.MonthlyCloud.syncDown().then(function(cloudDoc){
-      if(!cloudDoc) return;
+      window.MonthlyCloud.markCloudLoaded();
+      // First sign-in (no cloud copy yet) or the user kept this browser's
+      // copy: push it up now so the account holds it right away.
+      if(!cloudDoc){ return window.MonthlyCloud.syncUp(); }
+      if(localMatchesCloud(cloudDoc)){ setCloudStatus("· Saved to account", false); return; }
       var hasBoard = cloudDoc.board && cloudDoc.board.rows && cloudDoc.board.rows.length;
       var msg = "Load your saved months, starred items"+(hasBoard?", and current board":"")+
-        " from your account? This replaces what's currently in this browser.";
-      if(!window.confirm(msg)) return;
+        " from your account? This replaces what's currently in this browser.\n\n"+
+        "Cancel keeps this browser's copy and saves it to your account instead.";
+      if(!window.confirm(msg)) return window.MonthlyCloud.syncUp();
       applyCloudDoc(cloudDoc.archive, cloudDoc.year, cloudDoc.board);
+      setCloudStatus("· Saved to account", false);
+    }).catch(function(err){
+      console.error("Cloud load failed:", err);
+      setCloudStatus("· Not syncing", true);
+      note((err && err.code)==="permission-denied"
+        ? "Couldn't read your account data: Firestore denied access. Publish firestore.rules in the Firebase console (Firestore Database → Rules). Your work is still saved in this browser."
+        : "Couldn't reach your account data ("+((err && (err.code||err.message))||"unknown error")+"). Your work is still saved in this browser; reload to retry.");
     });
   }
 
