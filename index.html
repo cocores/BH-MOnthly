@@ -1,0 +1,2677 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Monthly Delivery Board</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F6F7FB;
+  --card:#FFFFFF;
+  --text:#323338;
+  --sub:#676879;
+  --faint:#9699A6;
+  --line:#E6E9EF;
+  --line-2:#D0D4E4;
+  --hover:#F5F6F8;
+  --blue:#0073EA;
+  --blue-dark:#0060B9;
+  --purple:#A25DDC;
+  --indigo:#6161FF;
+  --green:#00C875;
+  --orange:#FDAB3D;
+  --red:#E2445C;
+  --yellow:#FFCB00;
+  --pink:#FF158A;
+  --lblue:#579BFC;
+  --gray:#C4C4C4;
+  --teal:#00A9A5;
+  --radius:10px;
+  --shadow:0 4px 14px -8px rgba(29,32,43,.24);
+  --shadow-lift:0 10px 26px -10px rgba(29,32,43,.32);
+  --ease:.16s cubic-bezier(.3,0,.2,1);
+}
+*{box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  margin:0;background:var(--bg);color:var(--text);
+  font-family:"Figtree",-apple-system,"Segoe UI",Roboto,sans-serif;
+  font-size:14px;line-height:1.45;
+  -webkit-font-smoothing:antialiased;
+}
+.shell{max-width:1240px;margin:0 auto;padding:20px 20px 80px}
+h1,h2,h3{margin:0}
+button{font-family:inherit}
+::selection{background:#CFE6FE}
+
+/* ---------- board header ---------- */
+.crumb{font-size:12px;color:var(--faint);font-weight:500;display:flex;align-items:center;gap:6px}
+.crumb b{color:var(--sub);font-weight:600}
+.bhead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:8px}
+.bhead h1{font-size:27px;font-weight:800;letter-spacing:-.025em}
+.bhead .sub{font-size:13.5px;color:var(--sub);padding-bottom:4px}
+.tabs{display:flex;gap:2px;margin-top:16px;border-bottom:1px solid var(--line)}
+.tab{
+  padding:9px 14px;font-size:14px;font-weight:500;color:var(--sub);cursor:pointer;
+  border:0;background:transparent;font-family:inherit;
+  border-bottom:2px solid transparent;border-radius:6px 6px 0 0;
+  transition:background var(--ease),color var(--ease);
+}
+.tab:hover{background:#EAECF3;color:var(--text)}
+.tab:focus-visible{outline:2px solid var(--blue);outline-offset:-2px}
+.tab.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+
+/* ---------- export modal ---------- */
+.ovl{position:fixed;inset:0;background:rgba(41,45,56,.5);z-index:80;display:flex;align-items:center;justify-content:center;padding:24px;backdrop-filter:blur(2px)}
+.ovl[hidden]{display:none}
+.modal{background:var(--card);border-radius:12px;width:min(980px,100%);max-height:90vh;display:flex;flex-direction:column;box-shadow:0 24px 60px rgba(30,33,41,.35);overflow:hidden}
+.mhead{display:flex;align-items:flex-start;gap:12px;padding:18px 20px 14px}
+.mhead h2{font-size:19px;font-weight:700}
+.mhead .msub{font-size:13px;color:var(--faint);margin-top:2px}
+.mhead .btn{margin-left:auto}
+.mtabs{display:flex;gap:2px;padding:0 20px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.mtab{border:0;background:transparent;font-family:inherit;font-size:13.5px;font-weight:500;color:var(--sub);cursor:pointer;padding:9px 12px;border-bottom:2px solid transparent;border-radius:6px 6px 0 0;transition:background var(--ease),color var(--ease)}
+.mtab:hover{background:#EAECF3}
+.mtab.on{color:var(--blue);border-bottom-color:var(--blue);font-weight:600}
+.mbody{padding:18px 20px 22px;overflow:auto}
+.steps{background:#F0F6FF;border-left:3px solid var(--blue);border-radius:0 6px 6px 0;padding:12px 14px;font-size:13px;color:#0A4A8C}
+.steps ol{margin:6px 0 0;padding-left:20px}
+.steps li{margin:3px 0}
+.mrow{display:flex;gap:8px;flex-wrap:wrap;margin:14px 0}
+.preview{border:1px solid var(--line);border-radius:8px;padding:18px;background:#fff;max-height:46vh;overflow:auto}
+.preview .plabel{font-size:11px;font-weight:700;color:var(--faint);text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
+pre.code{
+  background:#F7F8FA;border:1px solid var(--line);border-radius:8px;padding:14px;margin:0;
+  font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12px;line-height:1.5;
+  white-space:pre-wrap;word-break:break-word;max-height:46vh;overflow:auto;color:#3B424D;
+}
+.otherlist{display:grid;gap:10px}
+.othercard{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:8px;padding:12px 14px}
+.othercard .oc{flex:1}
+.othercard b{display:block;font-size:14px}
+.othercard span{font-size:12.5px;color:var(--faint)}
+@media (max-width:640px){.ovl{padding:0}.modal{border-radius:0;max-height:100vh;height:100%}}
+.charts{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(310px,1fr));margin-top:16px}
+.ch{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px 18px 18px;box-shadow:var(--shadow);transition:box-shadow var(--ease),transform var(--ease)}
+.ch:hover{box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+.ch.wide{grid-column:1/-1}
+.ch h3{font-size:15px;font-weight:700}
+.ch .cs{font-size:12.5px;color:var(--faint);margin-top:2px}
+.donutwrap{display:flex;align-items:center;gap:18px;margin-top:12px;flex-wrap:wrap}
+.donutwrap svg{flex:0 0 auto}
+.legend{display:grid;gap:7px;min-width:130px}
+.legend .li{display:flex;align-items:center;gap:8px;font-size:13px}
+.legend .li b{margin-left:auto;font-weight:700}
+.legend .li span.nm{color:var(--sub)}
+.hbar{display:flex;align-items:center;gap:10px;margin-top:9px}
+.hbar .lb{width:150px;flex:0 0 auto;font-size:12.5px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hbar .lb.people{display:flex;align-items:center;gap:7px}
+.hbar .track{flex:1;height:22px;background:#F0F1F5;border-radius:4px;overflow:hidden;display:flex}
+.hbar .fill{height:100%;display:flex;align-items:center;justify-content:flex-end;padding-right:7px;color:#fff;font-size:11.5px;font-weight:700;min-width:2px}
+.hbar .fill.first{border-radius:4px 0 0 4px}
+.hbar .fill.last{border-radius:0 4px 4px 0}
+.hbar .vv{width:26px;text-align:right;font-size:12.5px;font-weight:700;color:var(--sub)}
+.cols{display:flex;align-items:flex-end;gap:14px;height:150px;margin-top:16px;padding-left:2px}
+.col{flex:1;display:flex;flex-direction:column;justify-content:flex-end;align-items:center;gap:7px;min-width:0}
+.col .cbar{width:100%;max-width:56px;border-radius:5px 5px 0 0;position:relative}
+.col .cv{font-size:12.5px;font-weight:800}
+.col .cl{font-size:11.5px;color:var(--sub);text-align:center;line-height:1.25;max-width:100%;overflow:hidden}
+.ring-side{display:flex;align-items:center;gap:16px;margin-top:12px;flex-wrap:wrap}
+.ring-side .rtext{font-size:13px;color:var(--sub);flex:1;min-width:150px}
+.ring-side .rtext b{display:block;color:var(--text);font-size:15px;font-weight:700;margin-bottom:3px}
+.dnum{font-size:11.5px;font-weight:700;fill:var(--text)}
+.chempty{color:var(--faint);font-size:13px;margin-top:12px}
+
+/* ---------- updates feed ---------- */
+.feedwrap{margin-top:16px;display:grid;gap:14px;max-width:900px}
+.fgroup{font-size:12.5px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.03em;margin-top:6px}
+.fitem{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.fhead{display:flex;align-items:center;gap:10px;padding:13px 16px;border-bottom:1px solid var(--line);flex-wrap:wrap}
+.fhead .ft{font-weight:700;font-size:14.5px}
+.fhead .fk{font-size:12px;font-weight:600;color:var(--blue)}
+.fhead .right{margin-left:auto;display:flex;align-items:center;gap:8px}
+.fbody{padding:14px 16px 16px;display:grid;gap:10px}
+.fmissing{padding:12px 16px 16px;color:var(--faint);font-size:13px}
+.noteblock{background:var(--card);border:1px solid var(--line);border-left:3px solid var(--blue);border-radius:var(--radius);padding:16px 18px;box-shadow:var(--shadow)}
+.noteblock .nl{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;margin-bottom:8px}
+.noteedit{font-size:14.5px;line-height:1.55;min-height:54px;white-space:pre-wrap;border-radius:4px}
+.noteedit:empty:before{content:attr(data-ph);color:var(--faint)}
+.noteedit:focus{outline:2px solid var(--blue);outline-offset:3px}
+
+/* ---------- toolbar ---------- */
+.toolbar{
+  display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px;
+  padding:8px;background:var(--card);border:1px solid var(--line);border-radius:var(--radius);
+  box-shadow:var(--shadow);
+}
+.btn{
+  display:inline-flex;align-items:center;gap:7px;height:34px;padding:0 13px;
+  border-radius:7px;border:1px solid transparent;background:transparent;color:var(--sub);
+  font-size:13.5px;font-weight:500;cursor:pointer;white-space:nowrap;
+  transition:background var(--ease),color var(--ease),border-color var(--ease),transform var(--ease);
+}
+.btn:hover{background:#EAECF3;color:var(--text)}
+.btn:active{transform:scale(.97)}
+.btn:focus-visible{outline:2px solid var(--blue);outline-offset:1px}
+.btn.primary{background:var(--blue);color:#fff;font-weight:600;padding:0 16px;box-shadow:0 2px 8px -2px rgba(0,115,234,.5)}
+.btn.primary:hover{background:var(--blue-dark);color:#fff}
+.btn.outline{border-color:var(--line-2);background:var(--card)}
+.btn.on{background:#DCEBFB;color:var(--blue-dark)}
+.btn .ico{font-size:15px;line-height:1}
+.sep{width:1px;height:22px;background:var(--line-2);margin:0 4px}
+select.pick{
+  height:34px;border:1px solid var(--line-2);border-radius:7px;background:var(--card);
+  color:var(--text);font:500 13.5px "Figtree",sans-serif;padding:0 10px;cursor:pointer;
+  transition:border-color var(--ease);
+}
+select.pick:hover{border-color:var(--faint)}
+select.pick:focus{outline:2px solid var(--blue);outline-offset:-1px}
+.pushright{margin-left:auto}
+
+/* ---------- cards ---------- */
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+.card-head{display:flex;flex-wrap:wrap;align-items:center;gap:10px;padding:14px 18px;border-bottom:1px solid var(--line)}
+.card-head h2{font-size:16px;font-weight:700}
+.card-head .hint{font-size:12.5px;color:var(--faint);margin-left:auto}
+.card-body{padding:18px}
+#btnCollapse .chev{transition:transform var(--ease)}
+#btnCollapse.closed .chev{transform:rotate(-90deg)}
+
+/* ---------- setup ---------- */
+#setup{margin-top:14px}
+.fgrid{display:grid;gap:14px;grid-template-columns:repeat(3,minmax(0,1fr))}
+label.f{display:block}
+label.f > span{display:block;font-size:12px;font-weight:600;color:var(--sub);margin-bottom:5px}
+input[type=text],input[type=email],input[type=password],textarea,select.f-select{
+  width:100%;font:400 14px "Figtree",sans-serif;color:var(--text);background:var(--card);
+  border:1px solid var(--line-2);border-radius:7px;padding:8px 11px;
+  transition:border-color var(--ease),box-shadow var(--ease);
+}
+select.f-select{height:36px;cursor:pointer}
+input[type=text]:hover,input[type=email]:hover,input[type=password]:hover,textarea:hover,select.f-select:hover{border-color:var(--faint)}
+input[type=text]:focus,input[type=email]:focus,input[type=password]:focus,textarea:focus,select.f-select:focus{outline:none;border-color:var(--blue);box-shadow:0 0 0 3px rgba(0,115,234,.14)}
+textarea{resize:vertical;line-height:1.5}
+#paste{min-height:120px;font-family:ui-monospace,SFMono-Regular,Menlo,monospace;font-size:12.5px}
+.actions{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:14px}
+.notice{
+  margin-top:12px;padding:10px 12px;border-radius:6px;background:#FFF7EA;
+  border-left:3px solid var(--orange);color:#7A4B00;font-size:13px;display:flex;gap:8px;align-items:flex-start;
+}
+.notice:empty{display:none}
+
+/* ---------- dashboard widgets ---------- */
+.dash{display:grid;gap:12px;grid-template-columns:repeat(auto-fit,minmax(168px,1fr));margin-top:16px}
+.w{
+  background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:14px 16px;
+  box-shadow:var(--shadow);transition:box-shadow var(--ease),transform var(--ease);
+}
+.w:hover{box-shadow:var(--shadow-lift);transform:translateY(-1px)}
+.w .wt{font-size:12px;font-weight:600;color:var(--sub);display:flex;align-items:center;gap:6px}
+.w .wn{font-size:32px;font-weight:800;letter-spacing:-.03em;margin-top:6px;line-height:1.05}
+.w .wf{font-size:12px;color:var(--faint);margin-top:2px}
+.w.wide{grid-column:span 2}
+.batt{display:flex;height:26px;border-radius:4px;overflow:hidden;margin-top:12px;background:var(--line)}
+.batt i{
+  display:flex;align-items:center;justify-content:center;color:#fff;
+  font-size:11.5px;font-weight:700;min-width:0;
+}
+.battkey{display:flex;flex-wrap:wrap;gap:4px 14px;margin-top:9px}
+.battkey span{display:inline-flex;align-items:center;gap:5px;font-size:12px;color:var(--sub);font-weight:500}
+.dot{width:9px;height:9px;border-radius:50%;display:inline-block}
+.stack{display:flex;align-items:center;margin-top:12px}
+.stack .av{margin-left:-8px;border:2px solid var(--card)}
+.stack .av:first-child{margin-left:0}
+.stack .more{
+  margin-left:6px;font-size:12px;color:var(--sub);font-weight:600;
+}
+
+/* ---------- avatars & pills ---------- */
+.av{
+  width:28px;height:28px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;
+  color:#fff;font-size:11px;font-weight:700;letter-spacing:.02em;flex:0 0 auto;
+  text-shadow:0 1px 1.5px rgba(0,0,0,.3);transition:transform var(--ease);
+}
+.pill{
+  display:inline-flex;align-items:center;justify-content:center;
+  height:22px;padding:0 10px;border-radius:11px;font-size:12px;font-weight:600;
+  background:#EDEEF3;color:var(--sub);white-space:nowrap;max-width:100%;
+}
+.pill.rel{background:#E5F4FF;color:var(--blue-dark)}
+.pill.spr{background:#F1E9FB;color:#7A3FB5}
+
+/* ---------- board ---------- */
+.group{margin-top:22px}
+.ghead{display:flex;align-items:center;gap:9px;padding:0 2px 8px}
+.gtoggle{
+  border:0;background:transparent;cursor:pointer;padding:2px;line-height:0;border-radius:6px;
+  transition:background var(--ease);
+}
+.gtoggle:hover{background:#EAECF3}
+.gtoggle svg{transition:transform .16s ease}
+.group.closed .gtoggle svg{transform:rotate(-90deg)}
+.gname{font-size:16px;font-weight:700;letter-spacing:-.01em}
+.gcount{font-size:12.5px;color:var(--faint);font-weight:500}
+.gwrap{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);overflow:hidden;box-shadow:var(--shadow)}
+.group.closed .gwrap{display:none}
+.scroller{overflow-x:auto}
+table.bd{border-collapse:separate;border-spacing:0;width:100%;min-width:1000px}
+table.bd th{
+  font-size:12px;font-weight:600;color:var(--sub);text-align:left;
+  padding:8px 10px;border-bottom:1px solid var(--line);background:#FCFCFD;white-space:nowrap;
+}
+table.bd th.mid{text-align:center}
+table.bd td{
+  padding:0 10px;height:38px;border-bottom:1px solid var(--line);
+  font-size:13.5px;vertical-align:middle;
+}
+table.bd tr:last-child td{border-bottom:0}
+table.bd tbody tr:hover td{background:var(--hover)}
+td.bar{width:6px;padding:0;height:38px}
+td.name{font-weight:500;min-width:230px}
+td.name .k{display:block;font-size:11.5px;color:var(--faint);font-weight:600;margin-top:-2px}
+td.mid{text-align:center}
+td.status{padding:0;width:104px}
+.statuscell{
+  width:100%;height:38px;border:0;cursor:pointer;color:#fff;font:700 12.5px "Figtree",sans-serif;
+  display:flex;align-items:center;justify-content:center;text-shadow:0 1px 1.5px rgba(0,0,0,.25);
+  transition:filter var(--ease);
+}
+.statuscell:hover{filter:brightness(1.08)}
+.statuscell.empty{background:#C4C4C4;color:#fff;font-weight:500;text-shadow:none}
+[contenteditable]:focus{outline:2px solid var(--blue);outline-offset:-2px;border-radius:3px;background:#fff}
+.flagrow td.bar{background:var(--orange) !important}
+.people{display:flex;align-items:center;gap:5px;justify-content:center}
+.del{
+  border:0;background:transparent;color:var(--faint);cursor:pointer;font-size:15px;
+  opacity:.28;width:24px;height:24px;border-radius:6px;transition:opacity var(--ease),background var(--ease),color var(--ease);
+}
+tr:hover .del{opacity:1}
+.del:hover{background:#FCE7EA;color:var(--red)}
+.additem{
+  display:flex;align-items:center;gap:8px;padding:9px 14px;color:var(--faint);
+  font-size:13.5px;cursor:pointer;background:var(--card);border-top:1px solid var(--line);
+  transition:background var(--ease),color var(--ease);
+}
+.additem:hover{color:var(--blue);background:var(--hover)}
+
+/* ---------- star (year-end report) ---------- */
+td.star{width:38px;padding:0;text-align:center}
+.starbtn{
+  border:0;background:transparent;cursor:pointer;padding:4px;border-radius:6px;line-height:0;
+  transition:background var(--ease),transform var(--ease);
+}
+.starbtn:hover{background:#FFF6DA;transform:scale(1.08)}
+.starbtn svg{display:block}
+
+/* ---------- per-item story ---------- */
+td.bub{width:42px;padding:0;text-align:center}
+.bubble{
+  border:0;background:transparent;cursor:pointer;padding:4px;border-radius:6px;line-height:0;
+  position:relative;transition:background var(--ease);
+}
+.bubble:hover{background:#E5F0FC}
+.bubble svg{display:block}
+.bubble .cnt{
+  position:absolute;top:-1px;right:-1px;background:var(--blue);color:#fff;border-radius:8px;
+  font-size:9px;font-weight:800;min-width:14px;height:14px;line-height:14px;padding:0 3px;
+}
+tr.detail{display:none}
+tr.detail.on{display:table-row}
+tr.detail td{height:auto;padding:0}
+tr.detail:hover td{background:var(--card)}
+.story{
+  display:grid;gap:10px;grid-template-columns:1.15fr 1.15fr .8fr;
+  padding:14px 14px 16px;background:#FBFCFE;border-top:1px dashed var(--line-2);
+}
+.sbox{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:9px 11px 10px}
+.sbox.why{border-left:3px solid var(--orange)}
+.sbox.did{border-left:3px solid var(--green)}
+.sbox.imp{border-left:3px solid var(--blue)}
+.slabel{
+  font-size:11px;font-weight:700;letter-spacing:.02em;color:var(--sub);
+  text-transform:uppercase;margin-bottom:5px;display:flex;align-items:center;gap:6px;
+}
+.sedit{
+  font-size:13.5px;line-height:1.5;min-height:46px;color:var(--text);white-space:pre-wrap;
+  border-radius:3px;
+}
+.sedit:empty:before{content:attr(data-ph);color:var(--faint)}
+.sedit:focus{outline:2px solid var(--blue);outline-offset:2px;background:#fff}
+@media (max-width:900px){.story{grid-template-columns:1fr}}
+
+/* ---------- updates / empty ---------- */
+.updates{margin-top:22px}
+.update{display:flex;gap:12px;padding:16px 18px}
+.update .ubody{white-space:pre-wrap;font-size:14px}
+.empty{
+  margin-top:20px;background:var(--card);border:1px dashed var(--line-2);border-radius:var(--radius);
+  padding:48px 24px;text-align:center;
+}
+.empty .eicon{
+  width:52px;height:52px;margin:0 auto 14px;border-radius:50%;background:#E5F0FC;
+  display:flex;align-items:center;justify-content:center;color:var(--blue);
+}
+.empty h3{font-size:18px;font-weight:700}
+.empty p{color:var(--sub);max-width:46ch;margin:8px auto 0}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;background:#EDEEF3;border-radius:16px;padding:5px 6px 5px 13px;font-size:13px;font-weight:500}
+.chip .n{color:var(--faint);font-size:12px}
+.chip button{border:0;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--blue);padding:2px 6px;border-radius:4px}
+.chip button:hover{background:#DCEBFB}
+.teamshare{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
+.teamshare .tsl{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
+.teamshare .tsp{font-size:12.5px;color:var(--faint);margin:0 0 12px;max-width:70ch}
+.tsrow{display:flex;flex-wrap:wrap;gap:8px}
+.tsrow input{flex:1 1 260px}
+.foot{margin-top:34px;font-size:12px;color:var(--faint)}
+
+/* ---------- toast ---------- */
+.toast{
+  position:fixed;left:50%;bottom:22px;transform:translateX(-50%);z-index:90;
+  background:#292D38;color:#fff;border-radius:8px;padding:10px 10px 10px 16px;
+  display:flex;align-items:center;gap:14px;font-size:13.5px;box-shadow:0 10px 30px -6px rgba(0,0,0,.45);
+  max-width:calc(100vw - 32px);
+}
+.toast[hidden]{display:none}
+.toast .btn{color:#8FC2FF;background:transparent;height:28px}
+.toast .btn:hover{background:rgba(255,255,255,.12);color:#fff}
+@media (prefers-reduced-motion:no-preference){
+  .toast{animation:toastIn .18s ease}
+  @keyframes toastIn{from{opacity:0;transform:translateX(-50%) translateY(8px)}to{opacity:1;transform:translateX(-50%) translateY(0)}}
+}
+
+/* ---------- popover ---------- */
+.pop{
+  position:absolute;z-index:60;background:var(--card);border-radius:9px;
+  box-shadow:var(--shadow-lift);padding:8px;display:grid;gap:6px;
+  grid-template-columns:repeat(2,86px);
+}
+.pop button{
+  border:0;border-radius:6px;height:34px;color:#fff;font-weight:700;font-size:12.5px;cursor:pointer;
+  text-shadow:0 1px 1.5px rgba(0,0,0,.25);transition:filter var(--ease),transform var(--ease);
+}
+.pop button:hover{filter:brightness(1.1)}
+.pop button:active{transform:scale(.96)}
+.pop button.clear{background:#EDEEF3;color:var(--sub);grid-column:span 2;text-shadow:none}
+.pop button.clear:hover{background:#E2E4EB;filter:none}
+
+@media (max-width:760px){
+  .fgrid{grid-template-columns:1fr}
+  .w.wide{grid-column:span 1}
+}
+
+/* ---------- mobile board (card layout instead of a wide table) ---------- */
+@media (max-width:680px){
+  .shell{padding:14px 12px 60px}
+  .bhead h1{font-size:21px}
+  .toolbar{gap:6px}
+  .btn{height:38px;padding:0 12px}
+  .btn.primary{padding:0 14px}
+  select.pick{height:38px}
+  .fgrid{grid-template-columns:1fr}
+  input[type=text],input[type=email],input[type=password],textarea,.noteedit,.sedit,select.pick,select.f-select{font-size:16px} /* stop iOS auto-zoom on focus */
+  .tabs{flex-wrap:nowrap;overflow-x:auto;-webkit-overflow-scrolling:touch}
+  .tab{white-space:nowrap;flex:0 0 auto}
+
+  .scroller{overflow-x:visible}
+  table.bd{min-width:0;width:100%;border-spacing:0}
+  table.bd thead{display:none}
+  table.bd,table.bd tbody,table.bd tr,table.bd td{display:block;width:100%}
+  table.bd tr{position:relative;padding:10px 92px 12px 14px;border-bottom:1px solid var(--line)}
+  table.bd tr.detail{display:none;padding:0}
+  table.bd tr.detail.on{display:block}
+  table.bd tr:last-child{border-bottom:0}
+  table.bd td{border-bottom:0;height:auto;padding:5px 0}
+  table.bd td.bar{position:absolute;left:0;top:0;bottom:0;width:4px;height:auto}
+  table.bd td.name{padding:0 0 6px;font-weight:600}
+  table.bd td.star{position:absolute;top:8px;right:62px;width:auto;padding:0}
+  table.bd td.bub{position:absolute;top:8px;right:34px;width:auto;padding:0}
+  table.bd tr:not(.detail) td:last-child{position:absolute;top:6px;right:6px;width:auto;padding:0}
+  table.bd .del{opacity:1}
+  table.bd td[data-label]{display:flex;justify-content:space-between;align-items:center;gap:10px;min-height:30px}
+  table.bd td[data-label]::before{content:attr(data-label);font-size:11px;font-weight:600;color:var(--faint);text-transform:uppercase;letter-spacing:.03em;flex:0 0 auto}
+  table.bd td.status .statuscell{width:auto;height:26px;padding:0 12px;border-radius:4px}
+  table.bd td.mid .people{justify-content:flex-end}
+  table.bd tr.detail td[colspan]{padding:0}
+  .additem{padding:12px 14px}
+}
+@media (prefers-reduced-motion:no-preference){
+  .group{animation:fade .3s ease backwards}
+  .w,.ch,.fitem{animation:fade .28s ease backwards}
+  tr.detail.on .story{animation:fadeDown .16s ease}
+  @keyframes fade{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+  @keyframes fadeDown{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+}
+@media print{
+  body{background:#fff}
+  .no-print{display:none !important}
+  .card,.gwrap,.w{box-shadow:none}
+  .group{break-inside:avoid}
+  .scroller{overflow:visible}
+  table.bd{min-width:0}
+  tr.detail{display:table-row !important}
+  tr.detail.blank{display:none !important}
+  td.bub,th.bubh,.additem{display:none}
+  .story{background:#fff;break-inside:avoid}
+  .ch,.fitem,.noteblock{break-inside:avoid}
+  .sedit:empty:before{content:""}
+  .shell{padding:0;max-width:none}
+}
+</style>
+</head>
+<body>
+
+<!-- ---------------- sign-in gate ----------------
+     Visible by default (fails closed) until Firebase resolves the auth
+     state; hidden only once signed in with a verified @BHphoto.com account. -->
+<div class="ovl no-print" id="authGate" role="dialog" aria-label="Sign in">
+  <div class="modal" style="width:min(380px,100%)">
+    <div class="mhead"><h2>Monthly Delivery Board</h2></div>
+    <div class="card-body">
+
+      <div id="authLoading"><p class="hint">Loading…</p></div>
+
+      <form id="authLoginForm" hidden>
+        <label class="f"><span>Work email</span>
+          <input type="email" id="authEmail" placeholder="you@bhphoto.com" autocomplete="email" required>
+        </label>
+        <label class="f" style="margin-top:12px"><span>Password</span>
+          <input type="password" id="authPassword" placeholder="••••••••" autocomplete="current-password" required minlength="6">
+        </label>
+        <div class="notice" id="authNotice" role="status" aria-live="polite"></div>
+        <div class="actions" style="margin-top:14px">
+          <button type="submit" class="btn primary" id="authSignIn">Sign in</button>
+          <button type="button" class="btn outline" id="authSignUp">Create account</button>
+        </div>
+        <p class="hint" style="margin-top:10px">
+          <button type="button" id="authForgot" style="border:0;background:none;padding:0;color:var(--blue);cursor:pointer;font:inherit">Forgot password?</button>
+        </p>
+        <p class="hint" style="margin-top:14px">Only @BHphoto.com email addresses are allowed.</p>
+      </form>
+
+      <div id="authVerify" hidden>
+        <p>We sent a verification link to <b id="authVerifyEmail"></b>. Click it, then continue below.</p>
+        <div class="notice" id="authVerifyNotice" role="status" aria-live="polite"></div>
+        <div class="actions" style="margin-top:14px">
+          <button type="button" class="btn primary" id="authContinue">I've verified — Continue</button>
+          <button type="button" class="btn outline" id="authResend">Resend email</button>
+          <button type="button" class="btn" id="authSignOut">Sign out</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<div class="shell">
+
+  <div class="crumb no-print">Work management <span>›</span> <b>My delivery</b> <span>›</span> <b id="crumbBoard">Monthly board</b></div>
+  <div class="bhead">
+    <h1 id="boardTitle">Monthly Delivery Board</h1>
+    <div class="sub" id="boardSub">Tickets I submitted, completed this period</div>
+  </div>
+  <div class="tabs no-print">
+    <button class="tab on" data-view="board">Main board</button>
+    <button class="tab" data-view="dash">Dashboard</button>
+    <button class="tab" data-view="updates">Updates</button>
+    <button class="tab" data-view="year">Year in review</button>
+  </div>
+
+  <div class="toolbar no-print">
+    <button class="btn primary" id="btnOpen"><span class="ico">+</span> Paste tickets</button>
+    <div class="sep"></div>
+    <select class="pick" id="groupBy" title="Group by">
+      <option value="fix">Group by release</option>
+      <option value="sprint">Group by sprint</option>
+      <option value="portfolio">Group by portfolio</option>
+      <option value="priority">Group by priority</option>
+      <option value="reporter">Group by reporter</option>
+      <option value="pm">Group by product manager</option>
+      <option value="month">Group by month</option>
+      <option value="none">No grouping</option>
+    </select>
+    <select class="pick" id="filterPm" title="Filter by product manager">
+      <option value="">All product managers</option>
+    </select>
+    <button class="btn" id="btnMine"><span class="ico">◍</span> Person: me only</button>
+    <button class="btn" id="btnStories"><span class="ico">▤</span> Open all writeups</button>
+    <button class="btn" id="btnMissing"><span class="ico">!</span> Needs a writeup</button>
+    <div class="sep"></div>
+    <div class="pushright"></div>
+    <button class="btn primary" id="btnExport"><span class="ico">↥</span> Export</button>
+    <span id="cloudAuth" style="display:flex;align-items:center;gap:8px"></span>
+  </div>
+
+  <!-- setup -->
+  <div class="card no-print" id="setup">
+    <div class="card-head">
+      <h2>Board setup</h2>
+      <span class="hint">Paste rows straight from Jira — tabs, commas or pipes all work.</span>
+      <button class="btn" id="btnCollapse">
+        <svg class="chev" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Hide
+      </button>
+    </div>
+    <div class="card-body">
+      <div class="fgrid">
+        <label class="f"><span>Period</span><select id="period" class="f-select"></select></label>
+        <label class="f"><span>Your name in Jira</span><input type="text" id="owner" placeholder="Timothy Cocores"></label>
+        <label class="f"><span>Jira browse URL (optional)</span><input type="text" id="jiraBase" placeholder="https://your-jira/browse/"></label>
+      </div>
+      <label class="f" style="margin-top:14px"><span>Ticket rows</span>
+        <textarea id="paste" placeholder="Key&#9;Priority&#9;Summary&#9;Reporter&#9;WO Resource&#9;QA Resource&#9;UX Designer&#9;Product Manager&#9;Portfolio&#9;Sprint&#9;Fix Version/s"></textarea>
+      </label>
+      <label class="f" style="margin-top:14px"><span>Monthly update (shows at the bottom of the board)</span>
+        <textarea id="note" rows="2" placeholder="What shipped that mattered, what slipped and why, what's queued next."></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn primary" id="btnBuild">Build board</button>
+        <button class="btn outline" id="btnAppend">Add to board</button>
+        <button class="btn outline" id="btnSample">Load sample</button>
+        <button class="btn" id="btnClear">Clear board</button>
+      </div>
+      <div class="notice" id="notice" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+
+  <div class="dash" id="dash"></div>
+  <div id="board"></div>
+  <div id="updates"></div>
+  <div id="charts"></div>
+  <div id="feed"></div>
+  <div id="yearview"></div>
+
+  <div class="card no-print" id="archive" hidden style="margin-top:22px">
+    <div class="card-head">
+      <h2>Saved months</h2>
+      <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn outline" id="btnLoadAllArchive" title="Load every saved month onto the board at once, grouped by month">Load all to board</button>
+        <button class="btn outline" id="btnExportArchive" title="Download all saved months as a CSV backup">Export CSV</button>
+        <button class="btn outline" id="btnImportArchive" title="Restore saved months from a CSV backup — useful if the browser cache gets cleared">Import CSV</button>
+        <button class="btn outline" id="btnSave">Save this month</button>
+      </div>
+      <input type="file" id="archiveCsvFile" accept=".csv,text/csv" style="display:none">
+    </div>
+    <div class="card-body">
+      <p class="hint" style="margin-bottom:10px">Saved months live in this browser (and, when signed in, your account). <b>Export CSV</b> keeps a copy outside the browser as a backup; <b>Import CSV</b> restores from one — handy if the browser's storage ever gets cleared.</p>
+      <div class="chips" id="archiveList"></div>
+      <div class="teamshare">
+        <div class="tsl">Share with your team</div>
+        <p class="tsp">Agree on a code with your teammates (e.g. in Slack). <b>Push</b> sends this board, your saved months and your starred items to that shared code. <b>Pull</b> replaces everything in this browser with whatever was last pushed. This isn't private — anyone with the code can read and overwrite it.</p>
+        <div class="tsrow">
+          <input type="text" id="teamCode" placeholder="Shared board code, e.g. acme-web-team">
+          <button class="btn outline" id="btnTeamPush">Push to team</button>
+          <button class="btn outline" id="btnTeamPull">Pull from team</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="foot">Everything stays in this page unless you save, export, or push it to shared storage.</div>
+</div>
+
+<div class="toast no-print" id="toast" role="status" aria-live="polite" hidden></div>
+
+<div class="ovl no-print" id="ovl" hidden>
+  <div class="modal" role="dialog" aria-label="Export">
+    <div class="mhead">
+      <div>
+        <h2>Export</h2>
+        <div class="msub" id="mSub"></div>
+      </div>
+      <button class="btn" id="btnClose" aria-label="Close">✕</button>
+    </div>
+    <div class="mtabs">
+      <button class="mtab on" data-x="rich">Confluence page</button>
+      <button class="mtab" data-x="wiki">Confluence markup</button>
+      <button class="mtab" data-x="storage">Storage format</button>
+      <button class="mtab" data-x="other">Markdown, CSV, print</button>
+      <button class="mtab" data-x="email">Email</button>
+    </div>
+    <div class="mbody" id="mBody"></div>
+  </div>
+</div>
+
+<!-- ---------------- Firebase (Auth + Firestore) ----------------
+     CDN modular SDK — no npm install / bundler, so this stays a single
+     static file deployable as-is to GitHub Pages and Vercel alike.
+     This config is a public client identifier by Firebase's own design;
+     access control is enforced by Firestore Security Rules (firestore.rules),
+     not by hiding these values. -->
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/12.19.0/firebase-app.js";
+import {
+  getAuth, createUserWithEmailAndPassword, signInWithEmailAndPassword,
+  sendEmailVerification, sendPasswordResetEmail, signOut, onAuthStateChanged
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-auth.js";
+import {
+  getFirestore, doc, getDoc, setDoc, serverTimestamp
+} from "https://www.gstatic.com/firebasejs/12.19.0/firebase-firestore.js";
+
+var firebaseConfig = {
+  apiKey: "AIzaSyAGEcddrnzuHNKR9PU6TnthjOtXzP2lw88",
+  authDomain: "monthly-c2d79.firebaseapp.com",
+  projectId: "monthly-c2d79",
+  storageBucket: "monthly-c2d79.firebasestorage.app",
+  messagingSenderId: "869857270779",
+  appId: "1:869857270779:web:3dcead2ef5b8d0cf80895e"
+};
+
+var app = initializeApp(firebaseConfig);
+var auth = getAuth(app);
+var dbFs = getFirestore(app);
+
+function isAllowedEmail(email){
+  return /@bhphoto\.com$/i.test(String(email||"").trim());
+}
+
+function signUp(email, password){
+  if(!isAllowedEmail(email)) return Promise.reject({code:"custom/domain", message:"Only @BHphoto.com email addresses are allowed."});
+  return createUserWithEmailAndPassword(auth, email, password).then(function(cred){
+    return sendEmailVerification(cred.user).then(function(){ return cred.user; });
+  });
+}
+
+function signIn(email, password){
+  if(!isAllowedEmail(email)) return Promise.reject({code:"custom/domain", message:"Only @BHphoto.com email addresses are allowed."});
+  return signInWithEmailAndPassword(auth, email, password).then(function(cred){ return cred.user; });
+}
+
+function resendVerification(){
+  return auth.currentUser ? sendEmailVerification(auth.currentUser) : Promise.reject({message:"Not signed in."});
+}
+
+function resetPassword(email){
+  return sendPasswordResetEmail(auth, email);
+}
+
+function reloadUser(){
+  var user = auth.currentUser;
+  if(!user) return Promise.resolve(null);
+  return user.reload().then(function(){ return auth.currentUser; });
+}
+
+function signOutUser(){ return signOut(auth); }
+
+function onAuthChange(cb){
+  onAuthStateChanged(auth, function(user){
+    if(user && !isAllowedEmail(user.email)){
+      // Defense in depth — signUp/signIn already gate on domain before ever
+      // calling Firebase, so this only fires for a pre-existing account that
+      // predates the restriction (or direct API use bypassing the form).
+      signOut(auth);
+      cb(null, "Only @BHphoto.com email addresses are allowed.");
+      return;
+    }
+    cb(user);
+  });
+}
+
+function syncUp(){
+  var user = auth.currentUser;
+  if(!user) return Promise.resolve();
+  var archive, year, board;
+  try{ archive = JSON.parse(window.localStorage.getItem("board:index") || "[]"); }catch(e){ archive = []; }
+  try{ year = JSON.parse(window.localStorage.getItem("board:yearend") || "[]"); }catch(e){ year = []; }
+  try{ board = JSON.parse(window.localStorage.getItem("board:current") || "null"); }catch(e){ board = null; }
+  return setDoc(doc(dbFs, "users", user.uid), { archive: archive, year: year, board: board, updatedAt: serverTimestamp() })
+    .catch(function(err){ console.error("Cloud sync failed:", err); });
+}
+
+function syncDown(){
+  var user = auth.currentUser;
+  if(!user) return Promise.resolve(null);
+  return getDoc(doc(dbFs, "users", user.uid)).then(function(snap){
+    return snap.exists() ? snap.data() : null;
+  });
+}
+
+window.MonthlyCloud = {
+  isAllowedEmail: isAllowedEmail,
+  signUp: signUp, signIn: signIn, signOut: signOutUser,
+  resendVerification: resendVerification, resetPassword: resetPassword, reloadUser: reloadUser,
+  onAuthChange: onAuthChange, syncUp: syncUp, syncDown: syncDown
+};
+window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
+</script>
+
+<script>
+(function(){
+  "use strict";
+
+  var FIELDS = ["key","priority","summary","reporter","wo","qa","ux","pm","portfolio","sprint","fix"];
+  var NOTE_FIELDS = ["problem","done","impact"];
+  var ALL_FIELDS = FIELDS.concat(NOTE_FIELDS);
+  var LABELS = {key:"Key",priority:"Priority",summary:"Summary",reporter:"Reporter",wo:"WO Resource",qa:"QA Resource",ux:"UX Designer",pm:"Product Manager",portfolio:"Portfolio",sprint:"Sprint",fix:"Fix Version/s",
+    problem:"What we were solving",done:"What shipped",impact:"Impact to watch"};
+  var UID = 0;
+  var CREW = [["wo","WO"],["qa","QA"],["ux","UX"],["pm","PM"]];
+  var PLABEL = {reporter:"Reporter",wo:"WO",qa:"QA",ux:"UX",pm:"PM"};
+  var EICON = '<div class="eicon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><rect x="5" y="4" width="14" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M9 3.5h6a1 1 0 011 1V6H8V4.5a1 1 0 011-1z" stroke="currentColor" stroke-width="1.6"/><path d="M8.5 12.5l2 2 4.5-4.5" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg></div>';
+  var EICON_STAR = '<div class="eicon"><svg width="24" height="24" viewBox="0 0 24 24" fill="none"><path d="M12 3l2.7 5.6 6.1.9-4.4 4.35 1.05 6.15L12 16.9l-5.45 3.1 1.05-6.15L3.2 9.5l6.1-.9L12 3z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/></svg></div>';
+  var PRI = {P1:{c:"var(--red)"},P2:{c:"var(--orange)"},P3:{c:"var(--lblue)"},P4:{c:"var(--teal)"}};
+  var GCOL = ["var(--blue)","var(--green)","var(--purple)","var(--orange)","var(--pink)","var(--lblue)","var(--indigo)","var(--teal)"];
+  var AVCOL = ["#0073EA","#00C875","#A25DDC","#FDAB3D","#E2445C","#579BFC","#6161FF","#00A9A5","#FF158A","#7E3B8A"];
+
+  var state = {rows:[], period:"", owner:"", jiraBase:"", note:"", groupBy:"fix", mineOnly:false, pmFilter:"", closed:{}, open:{}, view:"board"};
+  // Set while a Firestore pull is being applied locally, so saveYear/store.set
+  // (below) don't turn right around and sync the same data straight back up.
+  var cloudSuppressed = false;
+
+  /* ---- current (unsaved) board: local persistence + debounced cloud sync ----
+     Main board / Dashboard / Updates are all just views over `state`, so
+     persisting this one snapshot keeps all three populated across a reload
+     or a different device, same as Saved months / Year in review already do. */
+  var CURRENT_KEY = "board:current";
+  var boardSyncTimer = null;
+  function currentBoardSnapshot(){
+    return {rows:state.rows, period:state.period, owner:state.owner, jiraBase:state.jiraBase, note:state.note,
+      groupBy:state.groupBy, mineOnly:state.mineOnly, pmFilter:state.pmFilter};
+  }
+  function persistCurrentBoard(){
+    if(cloudSuppressed) return;
+    try{ window.localStorage.setItem(CURRENT_KEY, JSON.stringify(currentBoardSnapshot())); }catch(e){}
+    if(window.MonthlyCloud) window.MonthlyCloud.syncUp();
+  }
+  function scheduleBoardSync(){
+    if(boardSyncTimer) clearTimeout(boardSyncTimer);
+    boardSyncTimer = setTimeout(persistCurrentBoard, 1500);
+  }
+  function applyBoardSnapshot(snap){
+    state.rows = (snap.rows||[]).map(function(o){
+      var r=blank(); ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];}); return r;
+    });
+    state.period=snap.period||""; state.owner=snap.owner||""; state.jiraBase=snap.jiraBase||""; state.note=snap.note||"";
+    state.groupBy=snap.groupBy||"fix"; state.mineOnly=!!snap.mineOnly; state.pmFilter=snap.pmFilter||"";
+    ensurePeriodValue(state.period);
+    $("owner").value=state.owner; $("jiraBase").value=state.jiraBase; $("note").value=state.note; $("groupBy").value=state.groupBy;
+    $("btnMine").classList.toggle("on", state.mineOnly);
+    $("btnMine").innerHTML='<span class="ico">◍</span> '+(state.mineOnly?"Person: me only":"Person: everyone");
+  }
+  function restoreCurrentBoardFromLocal(){
+    var raw = null;
+    try{ raw = window.localStorage.getItem(CURRENT_KEY); }catch(e){}
+    if(!raw) return false;
+    var snap; try{ snap = JSON.parse(raw); }catch(e){ return false; }
+    if(!snap || !snap.rows || !snap.rows.length) return false;
+    applyBoardSnapshot(snap);
+    return true;
+  }
+
+  var $ = function(id){return document.getElementById(id);};
+  var esc = function(s){return String(s==null?"":s).replace(/[&<>"']/g,function(c){return {"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c];});};
+  var norm = function(s){return String(s==null?"":s).replace(/\s+/g," ").trim();};
+  var same = function(a,b){return !!norm(a) && !!norm(b) && norm(a).toLowerCase()===norm(b).toLowerCase();};
+  function hash(s){var h=0;for(var i=0;i<s.length;i++)h=(h*31+s.charCodeAt(i))>>>0;return h;}
+  function initials(n){
+    var p = norm(n).split(" ").filter(Boolean);
+    if(!p.length) return "?";
+    return (p[0][0] + (p.length>1 ? p[p.length-1][0] : "")).toUpperCase();
+  }
+  function avatar(n, title){
+    if(!norm(n)) return '<span class="av" style="background:#DCDFEC;color:#9699A6">–</span>';
+    return '<span class="av" title="'+esc((title?title+": ":"")+n)+'" style="background:'+AVCOL[hash(norm(n).toLowerCase())%AVCOL.length]+'">'+esc(initials(n))+'</span>';
+  }
+  function priKey(p){var m=/([1-4])/.exec(p||"");return m?"P"+m[1]:null;}
+
+  /* ---------------- year-end report (starred items) ---------------- */
+  var YEAR_KEY="board:yearend";
+  function yearId(r){
+    return norm(r.key) ? "k:"+norm(r.key).toLowerCase() : "p:"+norm(state.period).toLowerCase()+"|"+norm(r.summary).toLowerCase();
+  }
+  function loadYear(){
+    try{ var v=window.localStorage.getItem(YEAR_KEY); return v?JSON.parse(v):[]; }catch(e){ return []; }
+  }
+  function saveYear(list){
+    try{ window.localStorage.setItem(YEAR_KEY, JSON.stringify(list)); }catch(e){}
+    if(!cloudSuppressed && window.MonthlyCloud) window.MonthlyCloud.syncUp();
+  }
+  function isStarred(r, set){ return set ? !!set[yearId(r)] : loadYear().some(function(e){return e.id===yearId(r);}); }
+  function toggleStar(rowId){
+    var r=null; for(var k=0;k<state.rows.length;k++){ if(state.rows[k]._id===rowId){ r=state.rows[k]; break; } }
+    if(!r) return;
+    var list=loadYear(), id=yearId(r), idx=-1;
+    list.forEach(function(e,k){ if(e.id===id) idx=k; });
+    if(idx>-1) list.splice(idx,1);
+    else list.unshift({id:id,key:r.key,summary:r.summary,priority:r.priority,period:state.period,
+      portfolio:r.portfolio,reporter:r.reporter,fix:r.fix,sprint:r.sprint,
+      problem:r.problem,done:r.done,impact:r.impact});
+    saveYear(list);
+    updateYearTab(list.length);
+  }
+  // Keeps a starred item's Year in review entry in sync with the live row —
+  // otherwise starring something before its writeup is filled in freezes
+  // that entry blank forever, since the star only snapshotted the row once.
+  // `oldId` is the row's yearId() from *before* whatever edit triggered this,
+  // so the lookup still finds the entry even if the edit changed the key or
+  // (for keyless rows) the summary that yearId() is derived from.
+  function refreshYearEntry(r, oldId){
+    var list=loadYear(), idx=-1;
+    list.forEach(function(e,k){ if(e.id===oldId) idx=k; });
+    if(idx===-1) return;
+    list[idx]={id:yearId(r),key:r.key,summary:r.summary,priority:r.priority,period:state.period,
+      portfolio:r.portfolio,reporter:r.reporter,fix:r.fix,sprint:r.sprint,
+      problem:r.problem,done:r.done,impact:r.impact};
+    saveYear(list);
+  }
+  function starSvg(on){
+    return '<svg width="18" height="18" viewBox="0 0 20 20" fill="'+(on?"var(--yellow)":"none")+'">'+
+      '<path d="M10 2.4l2.35 4.76 5.25.76-3.8 3.7.9 5.23L10 14.35l-4.7 2.5.9-5.23-3.8-3.7 5.25-.76L10 2.4z" '+
+      'stroke="'+(on?"var(--yellow)":"#C3C6D4")+'" stroke-width="1.4" stroke-linejoin="round"/></svg>';
+  }
+  function starCell(r, yearSet){
+    var on=isStarred(r, yearSet);
+    return '<td class="star"><button class="starbtn'+(on?" on":"")+'" data-star="'+r._id+'" title="'+
+      (on?"Starred for the year-end report — click to remove":"Star for the year-end report")+'">'+starSvg(on)+'</button></td>';
+  }
+  function updateYearTab(n){
+    var tab=document.querySelector('.tab[data-view="year"]');
+    if(tab) tab.textContent="Year in review"+(n?" ("+n+")":"");
+  }
+
+  /* ---------------- parsing ---------------- */
+  var KEY_RE = /^[A-Z][A-Z0-9]+-\d+$/;
+  var HEADER_MAP = [
+    ["key", /^(issue\s*)?key$|^id$|^ticket$/],
+    ["priority", /^prior/],
+    ["summary", /^summary$|^title$|^name$|^description$/],
+    ["reporter", /^reporter$|requested by|^submitter$/],
+    ["wo", /^wo\b|work order|^wo resource$|^dev(eloper)?$/],
+    ["qa", /^qa/],
+    ["ux", /^ux|designer/],
+    ["pm", /product\s*(manager|mgr|owner)|^pm\b|^p\.?m\.?$/],
+    ["portfolio", /portfolio|^team$/],
+    ["sprint", /sprint/],
+    ["fix", /fix\s*version|^release$|^version/],
+    ["problem", /solving|problem|^why|pain|goal/],
+    ["done", /what shipped|shipped|what was done|solution|outcome/],
+    ["impact", /impact|metric|result|watch/]
+  ];
+  function mapHeader(cells){
+    var map={},used={};
+    cells.forEach(function(h,i){
+      var t=norm(h).toLowerCase().replace(/\*/g,"");
+      for(var j=0;j<HEADER_MAP.length;j++){
+        var f=HEADER_MAP[j][0];
+        if(!used[f] && HEADER_MAP[j][1].test(t)){map[i]=f;used[f]=true;return;}
+      }
+    });
+    return map;
+  }
+  function splitLine(line, d){
+    var out=[],cur="",q=false;
+    for(var i=0;i<line.length;i++){
+      var c=line[i];
+      if(q){ if(c==='"'){ if(line[i+1]==='"'){cur+='"';i++;} else q=false; } else cur+=c; }
+      else if(c==='"'){q=true;}
+      else if(c===d){out.push(cur);cur="";}
+      else cur+=c;
+    }
+    out.push(cur);
+    return out.map(norm);
+  }
+  function blank(){var r={};ALL_FIELDS.forEach(function(f){r[f]="";});r._flag=false;r._id="r"+(++UID);return r;}
+  function hasStory(r){return NOTE_FIELDS.some(function(f){return norm(r[f]);});}
+  function storyCount(r){return NOTE_FIELDS.filter(function(f){return norm(r[f]);}).length;}
+  function rowFrom(cells,map){
+    var r=blank(),hit=false;
+    cells.forEach(function(v,i){var f=map[i];if(f){r[f]=norm(v);if(r[f])hit=true;}});
+    return hit?r:null;
+  }
+  function parse(text){
+    var warn=[],rows=[];
+    var lines=text.replace(/\r/g,"").split("\n").filter(function(l){return norm(l)!=="";});
+    if(!lines.length) return {rows:rows,warn:["Nothing to read — the box was empty."]};
+
+    var d=null;
+    if(lines.some(function(l){return l.indexOf("\t")>-1;})) d="\t";
+    else if(lines.some(function(l){return l.indexOf("|")>-1;})) d="|";
+    else if(lines.filter(function(l){return l.indexOf(",")>-1;}).length>=Math.max(2,lines.length-1)) d=",";
+
+    if(d){
+      var head=splitLine(lines[0],d), map=mapHeader(head), body=lines.slice(1);
+      if(!Object.keys(map).length){
+        map={};FIELDS.forEach(function(f,i){map[i]=f;});body=lines;
+        warn.push("No header row found, so columns were read in this order: "+FIELDS.map(function(f){return LABELS[f];}).join(", ")+".");
+      }
+      body.forEach(function(l){
+        var r=rowFrom(splitLine(l,d),map);
+        if(r&&(r.key||r.summary)) rows.push(r);
+      });
+      return {rows:rows,warn:warn};
+    }
+
+    var start=-1;
+    for(var i=0;i<lines.length;i++){if(KEY_RE.test(norm(lines[i]))){start=i;break;}}
+    if(start===-1) return {rows:rows,warn:["No ticket keys found (like BHJ-121020). Include the key column, or add items on the board by hand."]};
+    var headerCells=lines.slice(0,start).map(norm), order=FIELDS.slice();
+    if(headerCells.length>=3){
+      var m=mapHeader(headerCells);
+      var got=headerCells.map(function(_,ix){return m[ix];}).filter(Boolean);
+      if(got.length>=3) order=got;
+    }
+    var chunks=[],cur=null;
+    for(var k=start;k<lines.length;k++){
+      var v=norm(lines[k]);
+      if(KEY_RE.test(v)){if(cur)chunks.push(cur);cur=[v];}
+      else if(cur)cur.push(v);
+    }
+    if(cur)chunks.push(cur);
+    /* Anchored assignment. A line-by-line paste drops blank cells entirely, so
+       counting positions shifts people into the wrong columns. Instead: pin the
+       key/priority/summary at the front, pin release and sprint by their shape at
+       the back, then place people using roles learned from complete rows. */
+    var PEOPLE = ["reporter","wo","qa","ux","pm"], MID = ["wo","qa","ux"];
+    var FIXRE = /^[A-Za-z]{2,}[-_ ]?\d{6,}/;
+    var SPRINTRE = /^\d{4}\s+\S+|sprint|^(q[1-4])\b/i;
+    var PRIRE = /^p[0-9]$/i;
+
+    function split(c){
+      var cells = c.slice(), head = {}, tail = {};
+      if(cells.length && KEY_RE.test(cells[0])) head.key = cells.shift();
+      if(cells.length && PRIRE.test(cells[0])) head.priority = cells.shift();
+      if(cells.length) head.summary = cells.shift();
+      if(cells.length && FIXRE.test(cells[cells.length-1])) tail.fix = cells.pop();
+      if(cells.length && SPRINTRE.test(cells[cells.length-1])) tail.sprint = cells.pop();
+      return {head:head, tail:tail, people:cells};
+    }
+
+    var split1 = chunks.map(split);
+    /* portfolio sits just past the people block; learn it from the rows that
+       clearly have one, then recognise it everywhere else */
+    var portSeen = {};
+    split1.forEach(function(s){
+      if(s.people.length > PEOPLE.length){
+        var v = s.people[s.people.length-1];
+        portSeen[v.toLowerCase()] = (portSeen[v.toLowerCase()]||0)+1;
+      }
+    });
+    /* roles learned from rows where every person column was filled */
+    var roleOf = {};
+    split1.forEach(function(s){
+      if(s.people.length === PEOPLE.length){
+        PEOPLE.forEach(function(f,ix){
+          var n = s.people[ix].toLowerCase();
+          if(!n) return;
+          roleOf[n] = roleOf[n] || {};
+          roleOf[n][f] = (roleOf[n][f]||0)+1;
+        });
+      }
+    });
+    function bestRole(name, pool, taken){
+      var h = roleOf[name.toLowerCase()], best = null, hi = 0;
+      if(!h) return null;
+      pool.forEach(function(f){ if(!taken[f] && (h[f]||0) > hi){ hi = h[f]; best = f; } });
+      return best;
+    }
+
+    var repaired = 0;
+    split1.forEach(function(s){
+      var r = blank(), guessed = false;
+      Object.keys(s.head).forEach(function(f){ r[f] = s.head[f]; });
+      Object.keys(s.tail).forEach(function(f){ r[f] = s.tail[f]; });
+      var p = s.people.slice();
+
+      if(p.length > PEOPLE.length || (p.length && portSeen[p[p.length-1].toLowerCase()])) r.portfolio = p.pop();
+
+      if(p.length === PEOPLE.length){
+        PEOPLE.forEach(function(f,ix){ r[f] = p[ix]; });
+      } else if(p.length){
+        /* reporter is always first and product manager always last in the export,
+           so pin both ends and fit WO / QA / UX into what's left */
+        r.reporter = p.shift();
+        if(p.length) r.pm = p.pop();
+        var taken = {};
+        var leftover = [];
+        p.forEach(function(v){
+          var f = bestRole(v, MID, taken);
+          if(f){ r[f] = v; taken[f] = true; } else leftover.push(v);
+        });
+        leftover.forEach(function(v){
+          for(var j=0;j<MID.length;j++){ if(!r[MID[j]]){ r[MID[j]] = v; guessed = true; return; } }
+          guessed = true;
+        });
+        if(p.length) repaired++;
+        r._flag = guessed;
+      }
+      rows.push(r);
+    });
+
+    if(repaired) warn.push(repaired+" item"+(repaired>1?"s":"")+" had blank person cells, which a line-by-line paste drops entirely. Reporter, Product Manager, release and sprint were matched by position and shape; WO, QA and UX were filled from the roles those people hold on your other rows. Anything still uncertain is marked orange — check those cells.");
+    return {rows:rows,warn:warn};
+  }
+
+  /* ---------------- derived ---------------- */
+  function visibleRows(){
+    var rows = state.rows;
+    if(state.mineOnly && state.owner) rows = rows.filter(function(r){return same(r.reporter,state.owner)||same(r.pm,state.owner);});
+    if(state.pmFilter) rows = rows.filter(function(r){return same(r.pm,state.pmFilter);});
+    return rows;
+  }
+  function pmOptionsList(){
+    var seen={}, out=[];
+    state.rows.forEach(function(r){
+      var v=norm(r.pm);
+      if(v && !seen[v.toLowerCase()]){ seen[v.toLowerCase()]=true; out.push(v); }
+    });
+    return out.sort(function(a,b){return a.localeCompare(b);});
+  }
+  function refreshPmFilter(){
+    var sel=$("filterPm"), names=pmOptionsList(), cur=state.pmFilter;
+    var keep = cur && names.some(function(n){return same(n,cur);});
+    sel.innerHTML = '<option value="">All product managers</option>'+
+      names.map(function(n){return '<option value="'+esc(n)+'">'+esc(n)+'</option>';}).join("");
+    sel.value = keep ? cur : "";
+    if(!keep && cur){ state.pmFilter=""; }
+  }
+  function groupKeyOf(r){
+    switch(state.groupBy){
+      case "sprint": return r.sprint||"No sprint";
+      case "portfolio": return r.portfolio||"No portfolio";
+      case "priority": return r.priority||"No priority";
+      case "reporter": return r.reporter||"No reporter";
+      case "pm": return r.pm||"No product manager";
+      case "month": return r._period||"No month";
+      case "none": return "All items";
+      default: return r.fix||"No release";
+    }
+  }
+  function grouped(rows){
+    var map={},order=[],tsByGroup={};
+    rows.forEach(function(r){
+      var g=groupKeyOf(r);
+      if(!map[g]){map[g]=[];order.push(g);}
+      map[g].push(r);
+      if(state.groupBy==="month") tsByGroup[g]=Math.max(tsByGroup[g]||0, r._periodTs||0);
+    });
+    order.sort(function(a,b){
+      var na=/^No /.test(a),nb=/^No /.test(b);
+      if(na!==nb) return na?1:-1;
+      if(state.groupBy==="month") return (tsByGroup[b]||0)-(tsByGroup[a]||0);
+      return b.localeCompare(a,undefined,{numeric:true});
+    });
+    return order.map(function(g){return {name:g,rows:map[g]};});
+  }
+  function credits(rows){
+    var t={};
+    rows.forEach(function(r){
+      CREW.forEach(function(c){
+        var n=norm(r[c[0]]);
+        if(!n||same(n,state.owner))return;
+        if(!t[n])t[n]={n:0,roles:{}};
+        t[n].n++;t[n].roles[c[1]]=true;
+      });
+    });
+    return Object.keys(t).map(function(k){return {name:k,n:t[k].n,roles:Object.keys(t[k].roles)};})
+      .sort(function(a,b){return b.n-a.n||a.name.localeCompare(b.name);});
+  }
+
+  /* ---------------- render ---------------- */
+  function renderHead(){
+    var p = state.period ? " · "+state.period : "";
+    $("boardTitle").textContent = "Monthly Delivery Board";
+    $("crumbBoard").textContent = state.period || "Monthly board";
+    $("boardSub").textContent = (state.owner ? state.owner : "Set your name in board setup") + p;
+  }
+
+  function renderDash(){
+    var rows = visibleRows();
+    if(!rows.length){ $("dash").innerHTML=""; return; }
+    var mine = rows.filter(function(r){return same(r.reporter,state.owner);}).length;
+    var rel={},spr={};
+    rows.forEach(function(r){if(r.fix)rel[r.fix]=1;if(r.sprint)spr[r.sprint]=1;});
+    var crew = credits(rows);
+    var pri={};
+    rows.forEach(function(r){var k=priKey(r.priority)||"None";pri[k]=(pri[k]||0)+1;});
+    var keys=["P1","P2","P3","P4","None"].filter(function(k){return pri[k];});
+
+    var batt = '<div class="batt">'+keys.map(function(k){
+      var pct = Math.round(pri[k]/rows.length*100);
+      var col = k==="None" ? "#C4C4C4" : PRI[k].c;
+      return '<i style="flex:'+pri[k]+';background:'+col+'">'+(pct>=11?pct+"%":"")+'</i>';
+    }).join("")+'</div><div class="battkey">'+keys.map(function(k){
+      return '<span><i class="dot" style="background:'+(k==="None"?"#C4C4C4":PRI[k].c)+'"></i>'+k+' · '+pri[k]+'</span>';
+    }).join("")+'</div>';
+
+    var stack = crew.slice(0,6).map(function(c){return avatar(c.name);}).join("");
+    if(crew.length>6) stack += '<span class="more">+'+(crew.length-6)+'</span>';
+
+    $("dash").innerHTML =
+      w("Items done", rows.length, state.period||"this period") +
+      w("Submitted by you", mine, mine+" of "+rows.length+" items") +
+      w("Releases", Object.keys(rel).length, Object.keys(spr).length+" sprints") +
+      '<div class="w wide"><div class="wt">Priority breakdown</div>'+batt+'</div>' +
+      '<div class="w"><div class="wt">Teammates involved</div><div class="wn">'+crew.length+'</div><div class="stack">'+stack+'</div></div>';
+  }
+  function w(t,n,f){
+    return '<div class="w"><div class="wt">'+esc(t)+'</div><div class="wn">'+n+'</div><div class="wf">'+esc(f)+'</div></div>';
+  }
+
+  function renderBoard(){
+    var rows = visibleRows(), host = $("board");
+    if(!rows.length){
+      host.innerHTML = '<div class="empty">'+EICON+'<h3>This board is empty</h3>'+
+        '<p>Copy the rows out of your Jira table and paste them into board setup. Every cell stays editable afterwards. Try <b>Load sample</b> to see the shape first.</p></div>';
+      $("updates").innerHTML=""; return;
+    }
+    var yearSet={}; loadYear().forEach(function(e){ yearSet[e.id]=true; });
+    var html = "";
+    grouped(rows).forEach(function(g,gi){
+      var col = GCOL[gi%GCOL.length];
+      var closed = state.closed[g.name] ? " closed" : "";
+      html += '<div class="group'+closed+'" data-g="'+esc(g.name)+'" style="animation-delay:'+(gi*45)+'ms">';
+      html += '<div class="ghead">'+
+        '<button class="gtoggle" data-toggle="'+esc(g.name)+'" aria-label="Collapse group">'+
+          '<svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="'+col+'" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+        '</button>'+
+        '<span class="gname" style="color:'+col+'">'+esc(g.name)+'</span>'+
+        '<span class="gcount">'+g.rows.length+' item'+(g.rows.length===1?"":"s")+'</span>'+
+      '</div>';
+      html += '<div class="gwrap"><div class="scroller"><table class="bd"><thead><tr>'+
+        '<th style="width:6px;padding:0"></th><th>Item</th><th class="mid" title="Star for the year-end report">Star</th><th class="mid bubh" title="What we were solving, what shipped, impact">Writeup</th><th class="mid">Priority</th>'+
+        '<th class="mid">Reporter</th><th class="mid">WO</th><th class="mid">QA</th><th class="mid">UX</th><th class="mid">PM</th>'+
+        '<th>Portfolio</th><th>Sprint</th><th>Release</th><th style="width:34px"></th></tr></thead><tbody>';
+
+      g.rows.forEach(function(r){
+        var i = state.rows.indexOf(r);
+        var pk = priKey(r.priority);
+        var isMine = same(r.reporter,state.owner);
+        var keyHtml = r.key
+          ? (state.jiraBase
+              ? '<a class="k" style="color:var(--blue)" target="_blank" rel="noopener" href="'+esc(state.jiraBase.replace(/\/?$/,"/")+r.key)+'">'+esc(r.key)+'</a>'
+              : '<span class="k">'+esc(r.key)+'</span>')
+          : '<span class="k">no key</span>';
+        html += '<tr class="'+(r._flag?"flagrow":"")+'">'+
+          '<td class="bar" style="background:'+col+'"></td>'+
+          '<td class="name"><div contenteditable="plaintext-only" data-i="'+i+'" data-f="summary">'+esc(r.summary||"")+'</div>'+keyHtml+
+            (isMine?' <span class="pill" style="background:#E3FCEF;color:#00854D;height:18px;font-size:11px">yours</span>':"")+'</td>'+
+          starCell(r, yearSet)+
+          bubbleCell(r)+
+          '<td class="status" data-label="Priority"><button class="statuscell '+(pk?"":"empty")+'" data-pri="'+i+'" style="background:'+(pk?PRI[pk].c:"#C4C4C4")+'">'+esc(r.priority||"Set")+'</button></td>'+
+          personCell(r,"reporter",i)+personCell(r,"wo",i)+personCell(r,"qa",i)+personCell(r,"ux",i)+personCell(r,"pm",i)+
+          '<td data-label="Portfolio"><div contenteditable="plaintext-only" data-i="'+i+'" data-f="portfolio">'+esc(r.portfolio)+'</div></td>'+
+          '<td data-label="Sprint">'+(r.sprint?'<span class="pill spr">'+esc(r.sprint)+'</span>':'<div contenteditable="plaintext-only" data-i="'+i+'" data-f="sprint" style="color:var(--faint)">—</div>')+'</td>'+
+          '<td data-label="Release">'+(r.fix?'<span class="pill rel">'+esc(r.fix)+'</span>':'<div contenteditable="plaintext-only" data-i="'+i+'" data-f="fix" style="color:var(--faint)">—</div>')+'</td>'+
+          '<td><button class="del no-print" data-del="'+i+'" title="Delete item">×</button></td>'+
+        '</tr>'+ storyRow(r,i,col);
+      });
+      html += '</tbody></table></div><div class="additem no-print" data-add="'+esc(g.name)+'"><span>+</span> Add item</div></div></div>';
+    });
+
+    var crew = credits(rows);
+    if(crew.length){
+      html += '<div class="card" style="margin-top:22px"><div class="card-head"><h2>Who shipped it with you</h2>'+
+        '<span class="hint">'+crew.length+' people across WO, QA, UX and PM</span></div><div class="card-body"><div class="chips">'+
+        crew.map(function(c){
+          return '<span class="chip">'+avatar(c.name)+esc(c.name)+' <span class="n">'+c.n+' item'+(c.n===1?"":"s")+'</span></span>';
+        }).join("")+'</div></div></div>';
+    }
+    host.innerHTML = html;
+
+    $("updates").innerHTML = norm(state.note)
+      ? '<div class="card updates"><div class="card-head"><h2>Update</h2><span class="hint">'+esc(state.period||"")+'</span></div>'+
+        '<div class="update">'+avatar(state.owner||"You")+'<div class="ubody">'+esc(state.note)+'</div></div></div>'
+      : "";
+  }
+  function bubbleCell(r){
+    var n = storyCount(r), on = n>0;
+    var stroke = on ? "var(--blue)" : "#C3C6D4";
+    var fill = on ? "#DCEBFB" : "none";
+    return '<td class="bub"><button class="bubble" data-open="'+r._id+'" title="'+(on?"Writeup added — click to open":"Add the writeup: what we were solving, what shipped, impact")+'">'+
+      '<svg width="19" height="19" viewBox="0 0 20 20" fill="'+fill+'"><path d="M3.2 4.6A1.6 1.6 0 014.8 3h10.4a1.6 1.6 0 011.6 1.6v7.2a1.6 1.6 0 01-1.6 1.6H8.1L4.6 16.6a.6.6 0 01-1-.46V13.4H4.8a1.6 1.6 0 01-1.6-1.6V4.6z" stroke="'+stroke+'" stroke-width="1.5" stroke-linejoin="round"/></svg>'+
+      (n?'<span class="cnt">'+n+'</span>':"")+'</button></td>';
+  }
+
+  function storyRow(r,i,col){
+    var open = state.open[r._id];
+    var filled = hasStory(r);
+    var box = function(cls,f,ph){
+      return '<div class="sbox '+cls+'"><div class="slabel">'+esc(LABELS[f])+'</div>'+
+        '<div class="sedit" contenteditable="plaintext-only" data-i="'+i+'" data-f="'+f+'" data-ph="'+esc(ph)+'">'+esc(r[f])+'</div></div>';
+    };
+    return '<tr class="detail'+(open?" on":"")+(filled?"":" blank")+'" data-row="'+r._id+'">'+
+      '<td class="bar" style="background:'+col+'"></td>'+
+      '<td colspan="13"><div class="story">'+
+        box("why","problem","The problem, the complaint, the number that was off. Why this was worth a sprint.")+
+        box("did","done","What we actually built and where it lives now.")+
+        box("imp","impact","The metric or behavior to check next month.")+
+      '</div></td></tr>';
+  }
+
+  function personCell(r,f,i){
+    var v = r[f];
+    return '<td class="mid" data-label="'+esc(PLABEL[f])+'"><div class="people"><span contenteditable="plaintext-only" data-i="'+i+'" data-f="'+f+'" style="position:absolute;width:1px;height:1px;overflow:hidden;opacity:0">'+esc(v)+'</span>'+
+      '<button class="del2" data-person="'+i+'|'+f+'" style="border:0;background:transparent;cursor:pointer;padding:0" title="'+esc(LABELS[f])+': '+esc(v||"unassigned")+' — click to edit">'+avatar(v,LABELS[f])+'</button></div></td>';
+  }
+  /* ---------------- charts ---------------- */
+  function donut(segs, cLabel, cSub, size){
+    size = size || 152;
+    var total = segs.reduce(function(a,s){return a+s.v;},0) || 1;
+    var cx = size/2, R = size/2-13, C = 2*Math.PI*R, off = 0;
+    var arcs = segs.map(function(s){
+      var len = C*(s.v/total);
+      var el = '<circle cx="'+cx+'" cy="'+cx+'" r="'+R+'" fill="none" stroke="'+s.c+'" stroke-width="20"'+
+        ' stroke-dasharray="'+len.toFixed(2)+' '+(C-len).toFixed(2)+'" stroke-dashoffset="'+(-off).toFixed(2)+'"'+
+        ' transform="rotate(-90 '+cx+' '+cx+')"></circle>';
+      off += len; return el;
+    }).join("");
+    return '<svg width="'+size+'" height="'+size+'" viewBox="0 0 '+size+' '+size+'">'+
+      '<circle cx="'+cx+'" cy="'+cx+'" r="'+R+'" fill="none" stroke="#F0F1F5" stroke-width="20"></circle>'+arcs+
+      '<text x="'+cx+'" y="'+(cx-2)+'" text-anchor="middle" font-size="26" font-weight="800" fill="#323338">'+esc(cLabel)+'</text>'+
+      '<text x="'+cx+'" y="'+(cx+16)+'" text-anchor="middle" font-size="11" font-weight="600" fill="#9699A6">'+esc(cSub)+'</text></svg>';
+  }
+  function legend(segs, total){
+    return '<div class="legend">'+segs.map(function(s){
+      var pct = total ? Math.round(s.v/total*100) : 0;
+      return '<div class="li"><i class="dot" style="background:'+s.c+'"></i><span class="nm">'+esc(s.k)+'</span><b>'+s.v+'</b>'+
+        '<span style="color:var(--faint);font-size:11.5px;width:32px;text-align:right">'+pct+'%</span></div>';
+    }).join("")+'</div>';
+  }
+  function hbars(items, color){
+    var max = Math.max.apply(null, items.map(function(i){return i.v;}).concat([1]));
+    return items.map(function(i){
+      var pct = Math.max(3, i.v/max*100);
+      return '<div class="hbar"><div class="lb '+(i.av?"people":"")+'">'+(i.av?avatar(i.label):"")+'<span style="overflow:hidden;text-overflow:ellipsis">'+esc(i.label)+'</span></div>'+
+        '<div class="track"><div class="fill first last" style="width:'+pct+'%;background:'+(i.c||color)+'">'+i.v+'</div></div></div>';
+    }).join("");
+  }
+  function stacked(groups){
+    var max = Math.max.apply(null, groups.map(function(g){return g.total;}).concat([1]));
+    return groups.map(function(g){
+      var segs = g.segs.filter(function(s){return s.v>0;});
+      var inner = segs.map(function(s,ix){
+        return '<div class="fill '+(ix===0?"first":"")+(ix===segs.length-1?" last":"")+'" style="width:'+(s.v/g.total*100)+'%;background:'+s.c+'" title="'+esc(s.k)+': '+s.v+'">'+(s.v/g.total>.14?s.v:"")+'</div>';
+      }).join("");
+      return '<div class="hbar"><div class="lb">'+esc(g.label)+'</div>'+
+        '<div class="track" style="width:'+(g.total/max*100)+'%;flex:0 0 auto">'+inner+'</div><div class="vv">'+g.total+'</div></div>';
+    }).join("");
+  }
+  function columns(items){
+    var max = Math.max.apply(null, items.map(function(i){return i.v;}).concat([1]));
+    return '<div class="cols">'+items.map(function(i){
+      return '<div class="col"><div class="cv">'+i.v+'</div>'+
+        '<div class="cbar" style="height:'+Math.max(6, i.v/max*104)+'px;background:'+i.c+'"></div>'+
+        '<div class="cl">'+esc(i.label)+'</div></div>';
+    }).join("")+'</div>';
+  }
+  function tally(rows, field, fallback){
+    var t={}, order=[];
+    rows.forEach(function(r){
+      var k=norm(r[field])||fallback;
+      if(!t[k]){t[k]=0;order.push(k);}
+      t[k]++;
+    });
+    return order.map(function(k){return {label:k, v:t[k]};}).sort(function(a,b){return b.v-a.v;});
+  }
+
+  function renderCharts(){
+    var rows = visibleRows(), host = $("charts");
+    if(!rows.length){
+      host.innerHTML = '<div class="empty">'+EICON+'<h3>No data to chart yet</h3><p>Build the board first and the dashboard fills itself in.</p></div>';
+      return;
+    }
+    var mine = rows.filter(function(r){return same(r.reporter,state.owner);}).length;
+    var withStory = rows.filter(hasStory).length;
+    var crew = credits(rows);
+
+    var pri={};
+    rows.forEach(function(r){var k=priKey(r.priority)||"None";pri[k]=(pri[k]||0)+1;});
+    var priSegs = ["P1","P2","P3","P4","None"].filter(function(k){return pri[k];}).map(function(k){
+      return {k:k, v:pri[k], c:k==="None"?"#C4C4C4":PRI[k].c};
+    });
+
+    var relRows = tally(rows,"fix","No release");
+    var portRows = tally(rows,"portfolio","No portfolio");
+    var sprintRows = tally(rows,"sprint","No sprint");
+
+    var repSegs = [
+      {k:"Submitted by you", v:mine, c:"var(--green)"},
+      {k:"Submitted by others", v:rows.length-mine, c:"var(--lblue)"}
+    ].filter(function(s){return s.v>0;});
+
+    var covSegs = [
+      {k:"Written up", v:withStory, c:"var(--blue)"},
+      {k:"Still blank", v:rows.length-withStory, c:"#E6E9EF"}
+    ];
+    var covPct = Math.round(withStory/rows.length*100);
+
+    var byRelPri = relRows.slice(0,8).map(function(g){
+      var sub = rows.filter(function(r){return (norm(r.fix)||"No release")===g.label;});
+      var s={};
+      sub.forEach(function(r){var k=priKey(r.priority)||"None";s[k]=(s[k]||0)+1;});
+      return {label:g.label, total:sub.length, segs:["P1","P2","P3","P4","None"].map(function(k){
+        return {k:k, v:s[k]||0, c:k==="None"?"#C4C4C4":PRI[k].c};
+      })};
+    });
+
+    var teamRows = crew.slice(0,8).map(function(c){
+      return {label:c.name, v:c.n, av:true, c:AVCOL[hash(norm(c.name).toLowerCase())%AVCOL.length]};
+    });
+
+    var html = '<div class="dash" style="margin-top:16px">'+
+      w("Items done", rows.length, state.period||"this period")+
+      w("Submitted by you", mine, Math.round(mine/rows.length*100)+"% of the board")+
+      w("Releases", relRows.length, sprintRows.filter(function(s){return s.label!=="No sprint";}).length+" sprints")+
+      w("Teammates involved", crew.length, "across WO, QA, UX, PM")+
+      w("Writeups done", withStory+"/"+rows.length, covPct+"% documented")+
+    '</div><div class="charts">';
+
+    html += '<div class="ch"><h3>Priority mix</h3><div class="cs">Where the sprint\'s attention went</div>'+
+      '<div class="donutwrap">'+donut(priSegs, String(rows.length), "items")+legend(priSegs, rows.length)+'</div></div>';
+
+    html += '<div class="ch"><h3>Who submitted the work</h3><div class="cs">Your tickets vs. tickets you carried for others</div>'+
+      '<div class="donutwrap">'+donut(repSegs, mine+"", "yours", 152)+legend(repSegs, rows.length)+'</div></div>';
+
+    html += '<div class="ch"><h3>Writeup coverage</h3><div class="cs">Items with the problem and outcome captured</div>'+
+      '<div class="ring-side">'+donut(covSegs, covPct+"%", "documented", 152)+
+      '<div class="rtext"><b>'+withStory+' of '+rows.length+' items</b>'+
+      (withStory<rows.length
+        ? (rows.length-withStory)+' still have no writeup. Next month you won\'t remember why these shipped — fill them in while it\'s fresh.<br><br><button class="btn outline" id="btnGoFill">Fill in the gaps</button>'
+        : 'Every item on this board explains what it solved. This is the version worth sending up.')+
+      '</div></div></div>';
+
+    html += '<div class="ch"><h3>Items per release</h3><div class="cs">How the month broke into shipments</div>'+
+      hbars(relRows.slice(0,10), "var(--blue)")+'</div>';
+
+    if(teamRows.length){
+      html += '<div class="ch"><h3>Team load</h3><div class="cs">Assignments per person across every role</div>'+
+        hbars(teamRows)+'</div>';
+    }
+
+    if(byRelPri.length>1){
+      html += '<div class="ch wide"><h3>Priority mix by release</h3><div class="cs">Bar length is volume; color is priority</div>'+
+        stacked(byRelPri)+
+        '<div class="battkey" style="margin-top:12px">'+priSegs.map(function(s){
+          return '<span><i class="dot" style="background:'+s.c+'"></i>'+esc(s.k)+'</span>';
+        }).join("")+'</div></div>';
+    }
+
+    html += '<div class="ch"><h3>Portfolio spread</h3><div class="cs">Which surfaces the work touched</div>'+
+      columns(portRows.slice(0,6).map(function(p,ix){return {label:p.label, v:p.v, c:GCOL[ix%GCOL.length]};}))+'</div>';
+
+    if(sprintRows.length>1 || sprintRows[0].label!=="No sprint"){
+      html += '<div class="ch"><h3>Items per sprint</h3><div class="cs">Blank sprints usually mean an off-cycle release</div>'+
+        hbars(sprintRows.slice(0,8), "var(--purple)")+'</div>';
+    }
+
+    html += '</div>';
+    host.innerHTML = html;
+
+    var go = $("btnGoFill");
+    if(go) go.addEventListener("click", function(){ setView("board"); $("btnMissing").click(); });
+  }
+
+  /* ---------------- updates feed ---------------- */
+  function renderFeed(){
+    var rows = visibleRows(), host = $("feed");
+    var noteCard = '<div class="noteblock"><div class="nl">Monthly update — '+esc(state.period||"this period")+'</div>'+
+      '<div class="noteedit" contenteditable="plaintext-only" data-note="1" data-ph="The month in a paragraph: what shipped that mattered, what slipped and why, what\'s queued next.">'+esc(state.note)+'</div></div>';
+    if(!rows.length){
+      host.innerHTML = '<div class="feedwrap">'+noteCard+'<div class="empty">'+EICON+'<h3>No items to write up</h3><p>Build the board first, then every ticket shows up here with room to explain itself.</p></div></div>';
+      return;
+    }
+    var html = '<div class="feedwrap">'+noteCard;
+    grouped(rows).forEach(function(g){
+      html += '<div class="fgroup">'+esc(g.name)+' · '+g.rows.length+' item'+(g.rows.length===1?"":"s")+'</div>';
+      g.rows.forEach(function(r){
+        var i = state.rows.indexOf(r), pk = priKey(r.priority);
+        var keyHtml = r.key
+          ? (state.jiraBase ? '<a class="fk" target="_blank" rel="noopener" href="'+esc(state.jiraBase.replace(/\/?$/,"/")+r.key)+'">'+esc(r.key)+'</a>' : '<span class="fk">'+esc(r.key)+'</span>')
+          : '';
+        html += '<div class="fitem"><div class="fhead">'+avatar(r.reporter||state.owner,"Reporter")+
+          '<div><div class="ft">'+esc(r.summary||"Untitled")+'</div>'+keyHtml+'</div>'+
+          '<div class="right">'+
+            (pk?'<span class="pill" style="background:'+PRI[pk].c+';color:#fff">'+esc(r.priority)+'</span>':"")+
+            (r.fix?'<span class="pill rel">'+esc(r.fix)+'</span>':"")+
+          '</div></div><div class="fbody">'+
+          NOTE_FIELDS.map(function(f){
+            var cls = f==="problem"?"why":(f==="done"?"did":"imp");
+            var ph = f==="problem" ? "The problem, the complaint, the number that was off."
+                   : f==="done" ? "What we actually built and where it lives now."
+                   : "The metric or behavior to check next month.";
+            return '<div class="sbox '+cls+'"><div class="slabel">'+esc(LABELS[f])+'</div>'+
+              '<div class="sedit" contenteditable="plaintext-only" data-i="'+i+'" data-f="'+f+'" data-ph="'+esc(ph)+'">'+esc(r[f])+'</div></div>';
+          }).join("")+
+        '</div></div>';
+      });
+    });
+    html += '</div>';
+    host.innerHTML = html;
+  }
+
+  // Lets a writeup be added or edited right from Year in review, not just from
+  // the main board — same contenteditable pattern as storyRow's boxes, keyed
+  // by the starred entry's id instead of a board row index.
+  function yearBox(e,cls,f,ph){
+    return '<div class="sbox '+cls+'"><div class="slabel">'+esc(LABELS[f])+'</div>'+
+      '<div class="sedit" contenteditable="plaintext-only" data-yid="'+esc(e.id)+'" data-yf="'+f+'" data-ph="'+esc(ph)+'">'+esc(e[f])+'</div></div>';
+  }
+
+  function renderYear(){
+    var host=$("yearview"), list=loadYear();
+    updateYearTab(list.length);
+    if(!list.length){
+      host.innerHTML = '<div class="empty">'+EICON_STAR+'<h3>No starred items yet</h3>'+
+        '<p>Click the star next to any ticket on the main board to save it here for your end-of-year report — it stays even after you build next month\'s board.</p></div>';
+      return;
+    }
+    var byPeriod={}, order=[];
+    list.forEach(function(e){
+      var p=e.period||"No period";
+      if(!byPeriod[p]){byPeriod[p]=[];order.push(p);}
+      byPeriod[p].push(e);
+    });
+    order.sort(function(a,b){ return (Date.parse(b)||0)-(Date.parse(a)||0); });
+
+    var html = '<div class="card" style="margin-top:16px"><div class="card-head">'+
+      '<h2>End of year report</h2>'+
+      '<span class="hint">'+list.length+' starred item'+(list.length===1?"":"s")+' across '+order.length+' month'+(order.length===1?"":"s")+'</span>'+
+      '<button class="btn outline no-print" id="btnYearMd">Copy as Markdown</button>'+
+      '<button class="btn outline no-print" id="btnYearCsv">Download CSV</button>'+
+    '</div></div>';
+
+    html += '<div class="feedwrap" style="margin-top:16px">';
+    order.forEach(function(p){
+      html += '<div class="fgroup">'+esc(p)+' · '+byPeriod[p].length+' item'+(byPeriod[p].length===1?"":"s")+'</div>';
+      byPeriod[p].forEach(function(e){
+        var pk=priKey(e.priority);
+        html += '<div class="fitem"><div class="fhead"><div>'+
+          '<div class="ft">'+esc(e.summary||"Untitled")+'</div>'+
+          (e.key?'<span class="fk">'+esc(e.key)+'</span>':'')+'</div>'+
+          '<div class="right">'+
+            (pk?'<span class="pill" style="background:'+PRI[pk].c+';color:#fff">'+esc(e.priority)+'</span>':"")+
+            (e.fix?'<span class="pill rel">'+esc(e.fix)+'</span>':"")+
+            '<button class="bubble no-print" data-unstar="'+esc(e.id)+'" title="Remove from the year-end report">'+starSvg(true)+'</button>'+
+          '</div></div>'+
+          '<div class="fbody">'+
+            yearBox(e,"why","problem","The problem, the complaint, the number that was off. Why this was worth a sprint.")+
+            yearBox(e,"did","done","What we actually built and where it lives now.")+
+            yearBox(e,"imp","impact","The metric or behavior to check next month.")+
+          '</div>'+
+        '</div>';
+      });
+    });
+    html += '</div>';
+    host.innerHTML = html;
+
+    var b1=$("btnYearMd"); if(b1) b1.addEventListener("click",function(){ copy(yearMarkdown(list,order,byPeriod), this); });
+    var b2=$("btnYearCsv"); if(b2) b2.addEventListener("click",function(){ download("year-end-report.csv", yearCsv(list), "text/csv"); });
+  }
+  function yearMarkdown(list,order,byPeriod){
+    var out=["# End of year report"];
+    order.forEach(function(p){
+      out.push(""); out.push("## "+p+" ("+byPeriod[p].length+")");
+      byPeriod[p].forEach(function(e){
+        var line="- **"+(e.key||"—")+"**"+(e.priority?" · "+e.priority:"")+" · "+(e.summary||"Untitled");
+        out.push(line);
+        ["problem","done","impact"].forEach(function(f){
+          if(norm(e[f])) out.push("  - *"+LABELS[f]+":* "+String(e[f]).replace(/\n+/g," "));
+        });
+      });
+    });
+    return out.join("\n");
+  }
+  function yearCsv(list){
+    var fields=["period","key","priority","summary","portfolio","reporter","fix","sprint","problem","done","impact"];
+    var q=function(v){v=String(v==null?"":v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    var lines=[fields.map(function(f){return f==="fix"?"Fix Version/s":f.charAt(0).toUpperCase()+f.slice(1);}).join(",")];
+    list.forEach(function(e){ lines.push(fields.map(function(f){return q(e[f]);}).join(",")); });
+    return lines.join("\n");
+  }
+
+  function setView(v){
+    state.view = v;
+    var tabs = document.querySelectorAll(".tab");
+    for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle("on", tabs[i].dataset.view===v);
+    render();
+  }
+
+  function render(){
+    scheduleBoardSync();
+    renderHead();
+    refreshPmFilter();
+    var b = state.view==="board", d = state.view==="dash", u = state.view==="updates", y = state.view==="year";
+    $("dash").style.display = b?"":"none";
+    $("board").style.display = b?"":"none";
+    $("updates").style.display = b?"":"none";
+    $("charts").style.display = d?"":"none";
+    $("feed").style.display = u?"":"none";
+    $("yearview").style.display = y?"":"none";
+    if(b){ renderDash(); renderBoard(); }
+    else if(d){ renderCharts(); }
+    else if(u){ renderFeed(); }
+    else { renderYear(); }
+  }
+
+  /* ---------------- interactions ---------------- */
+  document.addEventListener("input", function(e){
+    var el=e.target;
+    if(el.dataset && el.dataset.note){
+      state.note = el.textContent.replace(/\u00a0/g," ");
+      $("note").value = state.note;
+      scheduleBoardSync();
+      return;
+    }
+    if(el.dataset && el.dataset.f!==undefined && el.dataset.i!==undefined){
+      var r=state.rows[+el.dataset.i];
+      if(r){
+        var oldYearId=yearId(r);
+        r[el.dataset.f]= NOTE_FIELDS.indexOf(el.dataset.f)>-1 ? el.textContent.replace(/\u00a0/g," ") : norm(el.textContent);
+        r._flag=false;
+        refreshYearEntry(r, oldYearId);
+        scheduleBoardSync();
+        if(NOTE_FIELDS.indexOf(el.dataset.f)>-1){
+          var host=document.querySelector('[data-open="'+r._id+'"]');
+          if(host){
+            var n=storyCount(r), path=host.querySelector("path"), cnt=host.querySelector(".cnt");
+            if(path){ path.setAttribute("stroke", n?"var(--blue)":"#C3C6D4"); path.parentNode.setAttribute("fill", n?"#DCEBFB":"none"); }
+            if(cnt){ if(n) cnt.textContent=n; else cnt.remove(); }
+            else if(n){ var s=document.createElement("span"); s.className="cnt"; s.textContent=n; host.appendChild(s); }
+          }
+          var tr2=document.querySelector('tr[data-row="'+r._id+'"]');
+          if(tr2) tr2.classList.toggle("blank", !hasStory(r));
+        }
+      }
+      return;
+    }
+    if(el.dataset && el.dataset.yid!==undefined && el.dataset.yf!==undefined){
+      var list=loadYear(), idx=-1;
+      list.forEach(function(en,k){ if(en.id===el.dataset.yid) idx=k; });
+      if(idx>-1){
+        var text = el.textContent.replace(/\u00a0/g," ");
+        list[idx][el.dataset.yf] = text;
+        saveYear(list);
+        // Keep the board row in sync too, if this item is on the current board.
+        var br=null;
+        for(var k2=0;k2<state.rows.length;k2++){ if(yearId(state.rows[k2])===el.dataset.yid){ br=state.rows[k2]; break; } }
+        if(br){ br[el.dataset.yf]=text; scheduleBoardSync(); }
+      }
+    }
+  });
+  document.addEventListener("blur", function(e){
+    var el=e.target;
+    if(el.dataset && el.dataset.f!==undefined){
+      if(el.dataset.f===state.groupBy || el.dataset.f==="fix") render();
+      else { renderDash(); }
+    }
+  }, true);
+  document.addEventListener("keydown", function(e){
+    if(e.key==="Enter" && e.target.getAttribute && e.target.getAttribute("contenteditable")){ e.preventDefault(); e.target.blur(); }
+  });
+
+  function closePop(){ var p=document.querySelector(".pop"); if(p) p.remove(); }
+  document.addEventListener("click", function(e){
+    var t=e.target;
+    if(!t.closest || !t.closest(".pop")) closePop();
+
+    var tab = t.closest && t.closest(".tab");
+    if(tab && tab.dataset.view){ setView(tab.dataset.view); return; }
+
+    var tg = t.closest && t.closest("[data-toggle]");
+    if(tg){ var g=tg.dataset.toggle; state.closed[g]=!state.closed[g]; renderBoard(); return; }
+
+    var del = t.closest && t.closest("[data-del]");
+    if(del){
+      var di=+del.dataset.del, removed=state.rows[di];
+      state.rows.splice(di,1); render();
+      showUndoToast("Deleted "+(removed.summary||removed.key||"item")+".", function(){
+        state.rows.splice(Math.min(di,state.rows.length),0,removed); render();
+      });
+      return;
+    }
+
+    var st = t.closest && t.closest("[data-star]");
+    if(st){
+      toggleStar(st.dataset.star);
+      if(state.view==="year") renderYear(); else renderBoard();
+      return;
+    }
+
+    var us = t.closest && t.closest("[data-unstar]");
+    if(us){
+      var list=loadYear(), rid=us.dataset.unstar;
+      list=list.filter(function(e){return e.id!==rid;});
+      saveYear(list); updateYearTab(list.length); renderYear();
+      return;
+    }
+
+    var op = t.closest && t.closest("[data-open]");
+    if(op){
+      var id = op.dataset.open;
+      state.open[id] = !state.open[id];
+      var tr = document.querySelector('tr[data-row="'+id+'"]');
+      if(tr){
+        tr.classList.toggle("on", !!state.open[id]);
+        if(state.open[id]){
+          var boxes = tr.querySelectorAll(".sedit");
+          for(var b=0;b<boxes.length;b++){ if(!norm(boxes[b].textContent)){ boxes[b].focus(); break; } }
+        }
+      }
+      return;
+    }
+
+    var add = t.closest && t.closest("[data-add]");
+    if(add){
+      var r=blank();
+      var gname=add.dataset.add;
+      if(state.groupBy!=="none" && !/^No /.test(gname)){
+        if(state.groupBy==="month") r._period=gname;
+        else{
+          var f = state.groupBy==="fix"?"fix":state.groupBy;
+          r[f]=gname;
+        }
+      }
+      if(state.owner){ r.reporter=state.owner; r.pm=state.owner; }
+      state.rows.push(r); render();
+      var cells=document.querySelectorAll('[data-f="summary"]');
+      if(cells.length) cells[cells.length-1].focus();
+      return;
+    }
+
+    var per = t.closest && t.closest("[data-person]");
+    if(per){
+      var parts=per.dataset.person.split("|");
+      var cell=per.parentNode.querySelector('[data-f="'+parts[1]+'"]');
+      if(cell){
+        cell.style.position="static";cell.style.width="auto";cell.style.height="auto";
+        cell.style.opacity="1";cell.style.overflow="visible";cell.style.minWidth="110px";
+        cell.style.fontSize="13px";
+        per.style.display="none";
+        cell.focus();
+        var sel=window.getSelection(),rg=document.createRange();
+        rg.selectNodeContents(cell);sel.removeAllRanges();sel.addRange(rg);
+      }
+      return;
+    }
+
+    var pri = t.closest && t.closest("[data-pri]");
+    if(pri){
+      closePop();
+      var i=+pri.dataset.pri, rect=pri.getBoundingClientRect();
+      var pop=document.createElement("div");
+      pop.className="pop";
+      pop.style.visibility="hidden";
+      pop.innerHTML = ["P1","P2","P3","P4"].map(function(k){
+        return '<button style="background:'+PRI[k].c+'" data-set="'+i+'|'+k+'">'+k+'</button>';
+      }).join("")+'<button class="clear" data-set="'+i+'|">Clear</button>';
+      document.body.appendChild(pop);
+      var pw=pop.offsetWidth, ph=pop.offsetHeight;
+      var left=Math.max(8, Math.min(rect.left, window.innerWidth-pw-8));
+      var top=rect.bottom+4;
+      if(top+ph>window.innerHeight-8) top=Math.max(8, rect.top-ph-4);
+      pop.style.left=(left+window.scrollX)+"px";
+      pop.style.top=(top+window.scrollY)+"px";
+      pop.style.visibility="";
+      return;
+    }
+
+    var set = t.closest && t.closest("[data-set]");
+    if(set){
+      var sp=set.dataset.set.split("|");
+      var row=state.rows[+sp[0]];
+      if(row){ row.priority=sp[1]; }
+      closePop();
+      if(state.groupBy==="priority") render(); else { renderBoard(); renderDash(); }
+      return;
+    }
+  });
+
+  /* ---------------- exports ---------------- */
+  function markdown(){
+    var rows=visibleRows(),out=[];
+    out.push("# Monthly delivery board — "+(state.period||"this period"));
+    out.push([state.owner,rows.length+" items done"].filter(Boolean).join(" · "));
+    if(norm(state.note)){out.push("");out.push("**Update** — "+norm(state.note));}
+    grouped(rows).forEach(function(g){
+      out.push("");
+      out.push("## "+(state.groupBy==="none"?"Items":g.name)+" ("+g.rows.length+")");
+      g.rows.forEach(function(r){
+        var line="- **"+(r.key||"—")+"**";
+        if(r.priority) line+=" · "+r.priority;
+        line+=" · "+(r.summary||"Untitled");
+        var ex=[];
+        if(r.reporter) ex.push("reported by "+r.reporter);
+        CREW.forEach(function(c){ if(norm(r[c[0]])) ex.push(c[1]+" "+r[c[0]]); });
+        if(ex.length) line+=" — "+ex.join(" · ");
+        out.push(line);
+        NOTE_FIELDS.forEach(function(f){
+          if(norm(r[f])) out.push("  - *"+LABELS[f]+":* "+String(r[f]).replace(/\n+/g," "));
+        });
+      });
+    });
+    var crew=credits(rows);
+    if(crew.length){
+      out.push("");out.push("## Who shipped it with you");
+      crew.forEach(function(c){out.push("- "+c.name+" — "+c.n+" item"+(c.n===1?"":"s"));});
+    }
+    return out.join("\n");
+  }
+  function plaintext(){ return markdown().replace(/\*\*/g,"").replace(/^#+\s*/gm,"").replace(/^- /gm,"• "); }
+  function csv(){
+    var q=function(v){v=String(v==null?"":v);return /[",\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v;};
+    var lines=[ALL_FIELDS.map(function(f){return LABELS[f];}).join(",")];
+    visibleRows().forEach(function(r){lines.push(ALL_FIELDS.map(function(f){return q(r[f]);}).join(","));});
+    return lines.join("\n");
+  }
+  function copy(text,btn){
+    var label=btn.textContent;
+    var done=function(){btn.textContent="Copied";setTimeout(function(){btn.textContent=label;},1400);};
+    if(navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(done,function(){fb(text,done);});
+    else fb(text,done);
+  }
+  function fb(text,done){
+    var ta=document.createElement("textarea");
+    ta.value=text;ta.style.position="fixed";ta.style.opacity="0";
+    document.body.appendChild(ta);ta.select();
+    try{document.execCommand("copy");done();}catch(err){note("Copy didn't go through — select the board text and copy manually.");}
+    document.body.removeChild(ta);
+  }
+  function download(name,text,type){
+    var b=new Blob([text],{type:type}),u=URL.createObjectURL(b);
+    var a=document.createElement("a");a.href=u;a.download=name;
+    document.body.appendChild(a);a.click();document.body.removeChild(a);
+    setTimeout(function(){URL.revokeObjectURL(u);},1500);
+  }
+  function note(m){$("notice").innerHTML=m?'<span>⚠</span><span>'+esc(m)+'</span>':"";}
+
+  /* ---------------- undo toast ---------------- */
+  var undoTimer=null;
+  function showUndoToast(label, restore){
+    var t=$("toast");
+    clearTimeout(undoTimer);
+    t.innerHTML='<span>'+esc(label)+'</span><button class="btn" id="toastUndo">Undo</button>';
+    t.hidden=false;
+    $("toastUndo").addEventListener("click",function(){
+      clearTimeout(undoTimer);
+      t.hidden=true;
+      restore();
+    });
+    undoTimer=setTimeout(function(){ t.hidden=true; },6000);
+  }
+
+  /* ---------------- confluence exports ---------------- */
+  var CPRI = {P1:{hex:"#E2445C",wiki:"Red"},P2:{hex:"#FDAB3D",wiki:"Yellow"},P3:{hex:"#0073EA",wiki:"Blue"},P4:{hex:"#00A9A5",wiki:"Green"}};
+  function cpri(p){ var k=priKey(p); return k?CPRI[k]:{hex:"#A5ACBA",wiki:"Grey"}; }
+  function today(){ return new Date().toLocaleDateString(undefined,{month:"long",day:"numeric",year:"numeric"}); }
+
+  function metrics(rows){
+    var rel={},spr={};
+    rows.forEach(function(r){ if(r.fix)rel[r.fix]=1; if(r.sprint)spr[r.sprint]=1; });
+    var pri={};
+    rows.forEach(function(r){ var k=priKey(r.priority)||"None"; pri[k]=(pri[k]||0)+1; });
+    return {
+      total:rows.length,
+      mine:rows.filter(function(r){return same(r.reporter,state.owner);}).length,
+      rel:Object.keys(rel), spr:Object.keys(spr),
+      crew:credits(rows),
+      story:rows.filter(hasStory).length,
+      pri:pri, priKeys:["P1","P2","P3","P4","None"].filter(function(k){return pri[k];})
+    };
+  }
+  function teamString(r){
+    return CREW.filter(function(c){return norm(r[c[0]]);}).map(function(c){return c[1]+" "+r[c[0]];}).join(", ");
+  }
+  function jiraUrl(k){ return state.jiraBase ? state.jiraBase.replace(/\/?$/,"/")+k : ""; }
+  function oneline(v){ return norm(String(v==null?"":v).replace(/\n+/g," ")); }
+
+  /* Rich HTML — paste straight into the Confluence editor. Inline styles only:
+     Confluence strips <style> blocks but keeps table cell backgrounds. */
+  function cHTML(){
+    var rows = visibleRows(), m = metrics(rows);
+    var FONT = "font-family:-apple-system,Segoe UI,Arial,sans-serif";
+    var H = '<div style="'+FONT+';color:#172B4D">';
+
+    H += '<h1 style="'+FONT+';font-size:26px;margin:0 0 4px">Delivery report — '+esc(state.period||"this period")+'</h1>';
+    H += '<p style="color:#5E6C84;font-size:13px;margin:0 0 16px">'+
+      esc(state.owner||"")+(state.owner?' &middot; ':'')+m.total+' items shipped &middot; '+
+      m.rel.length+' release'+(m.rel.length===1?"":"s")+' &middot; compiled '+esc(today())+'</p>';
+
+    if(norm(state.note)){
+      H += '<table style="border-collapse:collapse;width:100%;margin:0 0 20px"><tbody><tr>'+
+        '<td style="background:#DEEBFF;border-left:4px solid #0052CC;padding:12px 16px;font-size:14px;line-height:1.5">'+
+        '<strong style="display:block;margin-bottom:4px">Month in review</strong>'+esc(state.note).replace(/\n/g,"<br>")+
+        '</td></tr></tbody></table>';
+    }
+
+    /* at a glance */
+    var kpis = [
+      ["Items shipped", m.total, "#0073EA"],
+      ["Submitted by you", m.mine, "#00C875"],
+      ["Releases", m.rel.length, "#A25DDC"],
+      ["Sprints", m.spr.length, "#6161FF"],
+      ["Teammates", m.crew.length, "#FDAB3D"],
+      ["Documented", m.story+"/"+m.total, "#00A9A5"]
+    ];
+    H += '<h2 style="'+FONT+';font-size:19px;margin:0 0 8px">At a glance</h2>';
+    H += '<table style="border-collapse:collapse;width:100%;margin:0 0 18px"><tbody><tr>'+
+      kpis.map(function(k){
+        return '<td style="border:1px solid #DFE1E6;padding:12px 14px;text-align:center;width:16%">'+
+          '<div style="font-size:27px;font-weight:800;color:'+k[2]+';line-height:1.1">'+k[1]+'</div>'+
+          '<div style="font-size:11px;color:#5E6C84;text-transform:uppercase;letter-spacing:.04em;margin-top:4px">'+esc(k[0])+'</div></td>';
+      }).join("")+'</tr></tbody></table>';
+
+    /* priority bar as a proportional table row */
+    if(m.total){
+      var cols = 24, used = 0;
+      var segs = m.priKeys.map(function(k,ix){
+        var n = ix===m.priKeys.length-1 ? cols-used : Math.max(1, Math.round(m.pri[k]/m.total*cols));
+        used += n;
+        return {k:k, n:Math.max(1,n), v:m.pri[k], hex:k==="None"?"#A5ACBA":CPRI[k].hex};
+      });
+      H += '<table style="border-collapse:collapse;width:100%;margin:0 0 6px"><tbody><tr>'+
+        segs.map(function(s){
+          return '<td colspan="'+s.n+'" style="background:'+s.hex+';color:#fff;padding:7px 6px;text-align:center;font-size:12px;font-weight:700;border:0">'+
+            s.k+' &middot; '+s.v+'</td>';
+        }).join("")+'</tr></tbody></table>'+
+        '<p style="font-size:11.5px;color:#5E6C84;margin:0 0 22px">Priority mix across every item below.</p>';
+    }
+
+    /* items by group */
+    grouped(rows).forEach(function(g){
+      H += '<h2 style="'+FONT+';font-size:19px;margin:22px 0 8px">'+esc(g.name)+
+        ' <span style="font-size:13px;font-weight:400;color:#5E6C84">'+g.rows.length+' item'+(g.rows.length===1?"":"s")+'</span></h2>';
+      H += '<table style="border-collapse:collapse;width:100%;font-size:13px"><tbody>'+
+        '<tr>'+["Ticket","Pri","What we were solving","What shipped","Impact to watch","Team"].map(function(h,ix){
+          return '<th style="background:#0052CC;color:#fff;text-align:left;padding:8px 10px;font-size:12px;border:1px solid #0052CC;'+
+            (ix===1?"text-align:center;width:52px;":"")+'">'+esc(h)+'</th>';
+        }).join("")+'</tr>';
+      g.rows.forEach(function(r,ix){
+        var bg = ix%2 ? "#F7F8FA" : "#FFFFFF";
+        var pc = cpri(r.priority);
+        var u = jiraUrl(r.key);
+        var td = 'style="border:1px solid #DFE1E6;padding:8px 10px;vertical-align:top;background:'+bg+'"';
+        var dim = 'style="border:1px solid #DFE1E6;padding:8px 10px;vertical-align:top;background:'+bg+';color:#A5ADBA"';
+        H += '<tr>'+
+          '<td '+td+'><strong>'+(u?'<a href="'+esc(u)+'">'+esc(r.key||"")+'</a>':esc(r.key||""))+'</strong>'+
+            '<div style="color:#172B4D">'+esc(r.summary||"Untitled")+'</div>'+
+            (same(r.reporter,state.owner)?'':'<div style="color:#5E6C84;font-size:11.5px;margin-top:3px">Reported by '+esc(r.reporter||"—")+'</div>')+'</td>'+
+          '<td style="border:1px solid #DFE1E6;padding:8px 6px;text-align:center;background:'+pc.hex+';color:#fff;font-weight:700;font-size:12px">'+esc(r.priority||"—")+'</td>'+
+          (norm(r.problem)?'<td '+td+'>'+esc(oneline(r.problem))+'</td>':'<td '+dim+'>not captured</td>')+
+          (norm(r.done)?'<td '+td+'>'+esc(oneline(r.done))+'</td>':'<td '+dim+'>not captured</td>')+
+          (norm(r.impact)?'<td '+td+'>'+esc(oneline(r.impact))+'</td>':'<td '+dim+'>—</td>')+
+          '<td '+td+'><span style="font-size:11.5px;color:#42526E">'+esc(teamString(r)||"—")+'</span></td>'+
+        '</tr>';
+      });
+      H += '</tbody></table>';
+    });
+
+    if(m.crew.length){
+      H += '<h2 style="'+FONT+';font-size:19px;margin:26px 0 8px">Who shipped it</h2>';
+      H += '<table style="border-collapse:collapse;width:auto;font-size:13px"><tbody>'+
+        '<tr><th style="background:#0052CC;color:#fff;text-align:left;padding:8px 12px;border:1px solid #0052CC">Person</th>'+
+        '<th style="background:#0052CC;color:#fff;text-align:left;padding:8px 12px;border:1px solid #0052CC">Items</th>'+
+        '<th style="background:#0052CC;color:#fff;text-align:left;padding:8px 12px;border:1px solid #0052CC">Roles</th></tr>'+
+        m.crew.map(function(c,ix){
+          var bg = ix%2 ? "#F7F8FA" : "#FFFFFF";
+          return '<tr><td style="border:1px solid #DFE1E6;padding:7px 12px;background:'+bg+'">'+esc(c.name)+'</td>'+
+            '<td style="border:1px solid #DFE1E6;padding:7px 12px;background:'+bg+';font-weight:700">'+c.n+'</td>'+
+            '<td style="border:1px solid #DFE1E6;padding:7px 12px;background:'+bg+';color:#5E6C84">'+esc(c.roles.join(", "))+'</td></tr>';
+        }).join("")+'</tbody></table>';
+    }
+
+    H += '</div>';
+    return H;
+  }
+
+  /* Confluence wiki markup — Insert → Markup → Confluence Wiki. Gets real
+     status lozenges, info panel and expand macros. */
+  function cWiki(){
+    var rows = visibleRows(), m = metrics(rows), L = [];
+    var w = function(v){ return oneline(v).replace(/([|\[\]{}])/g,"\\$1"); };
+
+    L.push("h1. Delivery report — "+(state.period||"this period"));
+    L.push("");
+    L.push("{info:title="+(state.period||"Summary")+"}");
+    L.push((state.owner?state.owner+" · ":"")+m.total+" items shipped · "+m.rel.length+" release"+(m.rel.length===1?"":"s")+" · compiled "+today());
+    if(norm(state.note)){ L.push(""); L.push("*Month in review* — "+oneline(state.note)); }
+    L.push("{info}");
+    L.push("");
+    L.push("h2. At a glance");
+    L.push("||Items shipped||Submitted by you||Releases||Sprints||Teammates||Documented||");
+    L.push("|"+m.total+"|"+m.mine+"|"+m.rel.length+"|"+m.spr.length+"|"+m.crew.length+"|"+m.story+"/"+m.total+"|");
+    L.push("");
+    L.push("h2. Priority mix");
+    L.push(m.priKeys.map(function(k){
+      return k==="None" ? "{status:colour=Grey|title=No priority} "+m.pri[k]
+        : "{status:colour="+CPRI[k].wiki+"|title="+k+"} "+m.pri[k];
+    }).join("  "));
+
+    grouped(rows).forEach(function(g){
+      L.push("");
+      L.push("h2. "+g.name+" ("+g.rows.length+" item"+(g.rows.length===1?"":"s")+")");
+      L.push("||Ticket||Priority||What we were solving||What shipped||Impact to watch||Team||");
+      g.rows.forEach(function(r){
+        var u = jiraUrl(r.key);
+        var key = r.key ? (u ? "["+r.key+"|"+u+"]" : "*"+r.key+"*") : "—";
+        var pc = cpri(r.priority);
+        L.push("|"+key+" — "+w(r.summary||"Untitled")+
+          "|{status:colour="+pc.wiki+"|title="+(r.priority||"none")+"}"+
+          "|"+(w(r.problem)||"_not captured_")+
+          "|"+(w(r.done)||"_not captured_")+
+          "|"+(w(r.impact)||"—")+
+          "|"+(w(teamString(r))||"—")+"|");
+      });
+    });
+
+    if(m.crew.length){
+      L.push("");
+      L.push("h2. Who shipped it");
+      L.push("||Person||Items||Roles||");
+      m.crew.forEach(function(c){ L.push("|"+w(c.name)+"|"+c.n+"|"+c.roles.join(", ")+"|"); });
+    }
+    return L.join("\n");
+  }
+
+  /* Confluence storage format (XHTML) — for the source editor or the REST API */
+  function cStorage(){
+    var rows = visibleRows(), m = metrics(rows), X = [];
+    var st = function(p){
+      var pc = cpri(p);
+      return '<ac:structured-macro ac:name="status"><ac:parameter ac:name="colour">'+pc.wiki+'</ac:parameter>'+
+        '<ac:parameter ac:name="title">'+esc(p||"none")+'</ac:parameter></ac:structured-macro>';
+    };
+    X.push('<h1>Delivery report — '+esc(state.period||"this period")+'</h1>');
+    X.push('<ac:structured-macro ac:name="info"><ac:parameter ac:name="title">'+esc(state.period||"Summary")+'</ac:parameter><ac:rich-text-body>');
+    X.push('<p>'+esc((state.owner?state.owner+" · ":"")+m.total+" items shipped · "+m.rel.length+" releases · compiled "+today())+'</p>');
+    if(norm(state.note)) X.push('<p><strong>Month in review</strong> — '+esc(oneline(state.note))+'</p>');
+    X.push('</ac:rich-text-body></ac:structured-macro>');
+    X.push('<h2>At a glance</h2>');
+    X.push('<table><tbody><tr><th>Items shipped</th><th>Submitted by you</th><th>Releases</th><th>Sprints</th><th>Teammates</th><th>Documented</th></tr>'+
+      '<tr><td>'+m.total+'</td><td>'+m.mine+'</td><td>'+m.rel.length+'</td><td>'+m.spr.length+'</td><td>'+m.crew.length+'</td><td>'+m.story+'/'+m.total+'</td></tr></tbody></table>');
+    grouped(rows).forEach(function(g){
+      X.push('<h2>'+esc(g.name)+' ('+g.rows.length+')</h2>');
+      X.push('<table><tbody><tr><th>Ticket</th><th>Priority</th><th>What we were solving</th><th>What shipped</th><th>Impact to watch</th><th>Team</th></tr>');
+      g.rows.forEach(function(r){
+        var u = jiraUrl(r.key);
+        X.push('<tr><td>'+(u?'<a href="'+esc(u)+'">'+esc(r.key)+'</a>':'<strong>'+esc(r.key||"")+'</strong>')+' — '+esc(r.summary||"Untitled")+'</td>'+
+          '<td>'+st(r.priority)+'</td>'+
+          '<td>'+(esc(oneline(r.problem))||'<em>not captured</em>')+'</td>'+
+          '<td>'+(esc(oneline(r.done))||'<em>not captured</em>')+'</td>'+
+          '<td>'+(esc(oneline(r.impact))||'—')+'</td>'+
+          '<td>'+(esc(teamString(r))||'—')+'</td></tr>');
+      });
+      X.push('</tbody></table>');
+    });
+    if(m.crew.length){
+      X.push('<h2>Who shipped it</h2><table><tbody><tr><th>Person</th><th>Items</th><th>Roles</th></tr>');
+      m.crew.forEach(function(c){ X.push('<tr><td>'+esc(c.name)+'</td><td>'+c.n+'</td><td>'+esc(c.roles.join(", "))+'</td></tr>'); });
+      X.push('</tbody></table>');
+    }
+    return X.join("\n");
+  }
+
+  /* ---------------- export modal ---------------- */
+  var EX = {
+    rich: function(){
+      return '<div class="steps"><strong>Paste it straight in</strong>'+
+        '<ol><li>Click <strong>Copy formatted page</strong>.</li>'+
+        '<li>Open your Confluence page in edit mode.</li>'+
+        '<li>Paste. Headings, tables, colored priority cells and links all come through.</li></ol></div>'+
+        '<div class="mrow"><button class="btn primary" id="xRich">Copy formatted page</button>'+
+        '<button class="btn outline" id="xRichFile">Download as .html</button></div>'+
+        '<div class="preview"><div class="plabel">Preview — this is what lands on the page</div>'+cHTML()+'</div>';
+    },
+    wiki: function(){
+      return '<div class="steps"><strong>For real Confluence macros</strong>'+
+        '<ol><li>Copy the markup below.</li>'+
+        '<li>In the editor, use <strong>Insert → Markup</strong> (or type <code>+</code> then Markup) and pick <strong>Confluence Wiki</strong>.</li>'+
+        '<li>Paste and insert. Priorities become status lozenges and the summary becomes an info panel.</li></ol></div>'+
+        '<div class="mrow"><button class="btn primary" id="xWiki">Copy markup</button></div>'+
+        '<pre class="code" id="wikiCode">'+esc(cWiki())+'</pre>';
+    },
+    storage: function(){
+      return '<div class="steps"><strong>Storage format XHTML</strong>'+
+        '<ol><li>Use this with the Confluence REST API, or paste into a page\'s source editor if your instance has it enabled.</li>'+
+        '<li>Everything is native markup — <code>ac:structured-macro</code> for status lozenges and the info panel.</li></ol></div>'+
+        '<div class="mrow"><button class="btn primary" id="xStore">Copy storage format</button></div>'+
+        '<pre class="code">'+esc(cStorage())+'</pre>';
+    },
+    other: function(){
+      var mk = function(id,t,s){
+        return '<div class="othercard"><div class="oc"><b>'+t+'</b><span>'+s+'</span></div><button class="btn outline" id="'+id+'">'+
+          (id==="xPrint"?"Open":"Copy")+'</button></div>';
+      };
+      return '<div class="otherlist">'+
+        mk("xMd","Markdown","For Jira comments, GitHub, or any Markdown-native wiki. Writeups nested under each ticket.")+
+        mk("xTxt","Plain text","For Teams, Slack or email. No syntax, just the words.")+
+        '<div class="othercard"><div class="oc"><b>CSV</b><span>Every column including the three writeup fields. Re-import it next month and the writeups come back.</span></div><button class="btn outline" id="xCsv">Download</button></div>'+
+        '<div class="othercard"><div class="oc"><b>Print or save as PDF</b><span>Prints whichever tab you\'re on — board, dashboard charts, or the updates narrative.</span></div><button class="btn outline" id="xPrint">Open</button></div>'+
+      '</div>';
+    },
+    email: function(){
+      return '<div class="steps"><strong>Browsers can\'t attach a file to an email draft on their own</strong>'+
+        '<ol><li>Click <strong>Download report</strong> to save the monthly report.</li>'+
+        '<li>Click <strong>Open email draft</strong> — your mail app opens with the subject and body already filled in.</li>'+
+        '<li>Attach the file you downloaded (drag it in, or use the mail app\'s attach button) and send.</li></ol></div>'+
+        '<div class="mrow"><button class="btn primary" id="xEmailFile">Download report (.html)</button>'+
+        '<button class="btn outline" id="xEmailOpen">Open email draft</button></div>'+
+        '<div class="preview"><div class="plabel">Email preview</div>'+
+        '<p style="margin:0 0 10px"><strong>Subject:</strong> '+esc(EMAIL_SUBJECT)+'</p>'+
+        '<p style="white-space:pre-wrap;margin:0">'+esc(EMAIL_BODY)+'</p></div>';
+    }
+  };
+  var EMAIL_SUBJECT = "Monthly report";
+  var EMAIL_BODY = "Hello Product Ops,\n\nPlease find the monthly report attached.";
+  function mailtoLink(){
+    return "mailto:?subject="+encodeURIComponent(EMAIL_SUBJECT)+"&body="+encodeURIComponent(EMAIL_BODY);
+  }
+
+  function copyRich(html, plain, btn){
+    var label = btn.textContent;
+    var ok = function(){ btn.textContent = "Copied"; setTimeout(function(){ btn.textContent = label; }, 1600); };
+    if(navigator.clipboard && window.ClipboardItem){
+      try{
+        var item = new window.ClipboardItem({
+          "text/html": new Blob([html],{type:"text/html"}),
+          "text/plain": new Blob([plain],{type:"text/plain"})
+        });
+        navigator.clipboard.write([item]).then(ok, function(){ richFallback(html, ok); });
+        return;
+      }catch(err){ /* fall through */ }
+    }
+    richFallback(html, ok);
+  }
+  function richFallback(html, ok){
+    var d = document.createElement("div");
+    d.setAttribute("contenteditable","true");
+    d.style.position="fixed"; d.style.left="-9999px"; d.style.top="0";
+    d.innerHTML = html;
+    document.body.appendChild(d);
+    var rg = document.createRange(); rg.selectNodeContents(d);
+    var sel = window.getSelection(); sel.removeAllRanges(); sel.addRange(rg);
+    try{ document.execCommand("copy"); ok(); }catch(err){}
+    sel.removeAllRanges(); document.body.removeChild(d);
+  }
+
+  function openExport(x){
+    var rows = visibleRows();
+    $("mSub").textContent = rows.length
+      ? rows.length+" items · "+(state.period||"no period set")+" · "+metrics(rows).story+" with writeups"
+      : "Nothing on the board yet";
+    var tabs = document.querySelectorAll(".mtab");
+    for(var i=0;i<tabs.length;i++) tabs[i].classList.toggle("on", tabs[i].dataset.x===x);
+    $("mBody").innerHTML = rows.length ? EX[x]() : '<div class="steps">Build the board first — then every export fills itself in.</div>';
+    $("ovl").hidden = false;
+    document.body.style.overflow = "hidden";
+    $("btnClose").focus();
+
+    var bind = function(id, fn){ var b=$(id); if(b) b.addEventListener("click", function(){ fn.call(this); }); };
+    bind("xRich", function(){ copyRich(cHTML(), plaintext(), this); });
+    bind("xRichFile", function(){
+      download("delivery-report-"+slug()+".html",
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Delivery report</title></head><body style="margin:28px">'+cHTML()+'</body></html>',
+        "text/html");
+    });
+    bind("xWiki", function(){ copy(cWiki(), this); });
+    bind("xStore", function(){ copy(cStorage(), this); });
+    bind("xMd", function(){ copy(markdown(), this); });
+    bind("xTxt", function(){ copy(plaintext(), this); });
+    bind("xCsv", function(){ download("delivery-board-"+slug()+".csv", csv(), "text/csv"); });
+    bind("xPrint", function(){ closeExport(); setTimeout(function(){ window.print(); }, 120); });
+    bind("xEmailFile", function(){
+      download("monthly-report-"+slug()+".html",
+        '<!DOCTYPE html><html><head><meta charset="utf-8"><title>Monthly report</title></head><body style="margin:28px">'+cHTML()+'</body></html>',
+        "text/html");
+    });
+    bind("xEmailOpen", function(){ window.location.href = mailtoLink(); });
+  }
+  function slug(){ return (state.period||"export").replace(/\s+/g,"-").toLowerCase(); }
+
+  function closeExport(){
+    $("ovl").hidden = true;
+    document.body.style.overflow = "";
+    var b = $("btnExport"); if(b) b.focus();
+  }
+  $("btnExport").addEventListener("click", function(){ openExport("rich"); });
+  $("btnClose").addEventListener("click", closeExport);
+  $("ovl").addEventListener("click", function(e){ if(e.target===this) closeExport(); });
+  document.addEventListener("keydown", function(e){ if(e.key==="Escape" && !$("ovl").hidden) closeExport(); });
+  document.addEventListener("click", function(e){
+    var mt = e.target.closest && e.target.closest(".mtab");
+    if(mt && mt.dataset.x) openExport(mt.dataset.x);
+  });
+
+  var store = {
+    get: function(key){
+      var v = null;
+      try{ v = window.localStorage.getItem(key); }catch(e){ return Promise.reject(e); }
+      return Promise.resolve({value:v});
+    },
+    set: function(key, value){
+      try{ window.localStorage.setItem(key, value); }catch(e){ return Promise.reject(e); }
+      if(key===IDX && !cloudSuppressed && window.MonthlyCloud){
+        return window.MonthlyCloud.syncUp()
+          .then(function(){ return {cloudSynced:true}; })
+          .catch(function(){ return {cloudSynced:false}; });
+      }
+      return Promise.resolve({cloudSynced:null});
+    }
+  };
+  var IDX="board:index";
+  function readIdx(){
+    if(!store) return Promise.resolve([]);
+    return store.get(IDX).then(function(r){try{return r&&r.value?JSON.parse(r.value):[];}catch(e){return [];}}).catch(function(){return [];});
+  }
+  function drawIdx(){
+    if(!store) return;
+    $("archive").hidden=false;
+    readIdx().then(function(list){
+      $("archiveList").innerHTML=list.length?list.map(function(m,i){
+        return '<span class="chip">'+esc(m.period||"Untitled")+' <span class="n">'+m.rows.length+'</span>'+
+          '<button data-load="'+i+'">load</button><button data-drop="'+i+'">remove</button></span>';
+      }).join(""):'<span style="color:var(--faint)">Nothing saved yet. Save a month and it will be here next time you open this page.</span>';
+    });
+  }
+  document.addEventListener("click",function(e){
+    var l=e.target.closest&&e.target.closest("[data-load]");
+    var d=e.target.closest&&e.target.closest("[data-drop]");
+    if(!l&&!d) return;
+    readIdx().then(function(list){
+      if(l){
+        var m=list[+l.dataset.load];if(!m)return;
+        state.rows=m.rows.map(function(o){
+          var r=blank();
+          ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];});
+          return r;
+        });
+        state.open={};state.period=m.period||"";state.note=m.note||"";
+        ensurePeriodValue(state.period);$("note").value=state.note;
+        render();note("Loaded "+(m.period||"saved month")+".");
+      }else{
+        list.splice(+d.dataset.drop,1);
+        store.set(IDX,JSON.stringify(list)).then(drawIdx).catch(function(){});
+      }
+    });
+  });
+  $("btnLoadAllArchive").addEventListener("click", function(){
+    readIdx().then(function(list){
+      if(!list.length){ note("No saved months yet — nothing to load."); return; }
+      if(!window.confirm("Load all "+list.length+" saved month"+(list.length>1?"s":"")+" onto the board, grouped by month? This replaces what's currently on the board.")) return;
+      var combined=[];
+      list.forEach(function(m){
+        var ts = m.saved || Date.parse(m.period) || 0;
+        (m.rows||[]).forEach(function(o){
+          var r=blank();
+          ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];});
+          r._period = m.period || "Untitled";
+          r._periodTs = ts;
+          combined.push(r);
+        });
+      });
+      state.rows=combined; state.open={}; state.closed={};
+      state.groupBy="month"; $("groupBy").value="month";
+      setView("board");
+      note("Loaded "+list.length+" saved month"+(list.length>1?"s":"")+" onto the board, grouped by month.");
+    });
+  });
+  // Shared by the manual "Save this month" button and the session-timeout
+  // auto-save below, so the two stay in sync.
+  function saveCurrentMonth(){
+    if(!store || !state.rows.length) return Promise.resolve({saved:false});
+    return readIdx().then(function(list){
+      var e={period:state.period||new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"}),note:state.note,rows:state.rows,saved:Date.now()};
+      var ix=-1;
+      list.forEach(function(m,k){if(same(m.period,e.period))ix=k;});
+      if(ix>-1)list[ix]=e;else list.unshift(e);
+      return store.set(IDX,JSON.stringify(list.slice(0,24)));
+    }).then(function(result){
+      return {saved:true, cloudSynced: result && result.cloudSynced};
+    });
+  }
+  $("btnSave").addEventListener("click",function(){
+    if(!store){note("Saving isn't available here — export the CSV instead.");return;}
+    if(!state.rows.length){note("Add items before saving.");return;}
+    saveCurrentMonth().then(function(result){
+      drawIdx();
+      if(result.cloudSynced===false) note("Saved on this device, but couldn't sync to your account right now.");
+      else note("Saved.");
+    }).catch(function(){note("That didn't save — export the CSV as a backup.");});
+  });
+
+  /* ---------------- saved months: CSV backup / restore ----------------
+     A portable, human-readable backup of every saved month — independent
+     of localStorage and the Firestore sync, so there's still a way back
+     if the browser's storage (and thus board:index) ever gets cleared. */
+  function csvQuote(v){ v=String(v==null?"":v); return /[",\r\n]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v; }
+  function csvFromArchive(list){
+    var headerCols=["Period","Month Note","Saved At"].concat(ALL_FIELDS.map(function(f){return LABELS[f];}));
+    var lines=[headerCols.map(csvQuote).join(",")];
+    (list||[]).forEach(function(m){
+      var savedAt = m.saved ? new Date(m.saved).toISOString() : "";
+      (m.rows||[]).forEach(function(r){
+        var cells=[m.period||"", m.note||"", savedAt].concat(ALL_FIELDS.map(function(f){return r[f];}));
+        lines.push(cells.map(csvQuote).join(","));
+      });
+    });
+    return lines.join("\r\n");
+  }
+  // A real CSV parser (not just split-by-line): writeups can contain
+  // newlines, and a naive line-splitter would corrupt those cells.
+  function parseCsvTable(text){
+    var rows=[], row=[], cur="", inQ=false, i=0, n=text.length;
+    while(i<n){
+      var c=text[i];
+      if(inQ){
+        if(c==='"'){ if(text[i+1]==='"'){ cur+='"'; i+=2; continue; } inQ=false; i++; continue; }
+        cur+=c; i++; continue;
+      }
+      if(c==='"'){ inQ=true; i++; continue; }
+      if(c===','){ row.push(cur); cur=""; i++; continue; }
+      if(c==='\r'){ i++; continue; }
+      if(c==='\n'){ row.push(cur); rows.push(row); row=[]; cur=""; i++; continue; }
+      cur+=c; i++;
+    }
+    row.push(cur); rows.push(row);
+    if(rows.length && rows[rows.length-1].length===1 && rows[rows.length-1][0]==="") rows.pop();
+    return rows;
+  }
+  function archiveFromCsv(text){
+    var table=parseCsvTable(text);
+    if(!table.length) return {months:[], warn:["The file was empty."]};
+    var header=table[0].map(norm), idx={};
+    header.forEach(function(h,i){ idx[h]=i; });
+    if(idx["Period"]===undefined) return {months:[], warn:["That doesn't look like a saved-months CSV — missing a \"Period\" column."]};
+
+    var byPeriod={}, order=[];
+    for(var r=1;r<table.length;r++){
+      var cells=table[r];
+      if(cells.length===1 && norm(cells[0])==="") continue;
+      var period=norm(cells[idx["Period"]]);
+      if(!period) continue;
+      if(!byPeriod[period]){
+        var savedRaw = idx["Saved At"]!==undefined ? cells[idx["Saved At"]] : "";
+        byPeriod[period] = {
+          period: period,
+          note: idx["Month Note"]!==undefined ? (cells[idx["Month Note"]]||"") : "",
+          saved: savedRaw && Date.parse(savedRaw) ? Date.parse(savedRaw) : Date.now(),
+          rows: []
+        };
+        order.push(period);
+      }
+      var row=blank();
+      ALL_FIELDS.forEach(function(f){
+        var label=LABELS[f];
+        if(idx[label]!==undefined) row[f]=cells[idx[label]]||"";
+      });
+      if(row.key || row.summary) byPeriod[period].rows.push(row);
+    }
+    var months=order.map(function(p){return byPeriod[p];}).filter(function(m){return m.rows.length;});
+    return {months:months, warn:[]};
+  }
+  $("btnExportArchive").addEventListener("click", function(){
+    readIdx().then(function(list){
+      if(!list.length){ note("No saved months yet — nothing to export."); return; }
+      download("saved-months-backup.csv", csvFromArchive(list), "text/csv");
+    });
+  });
+  $("btnImportArchive").addEventListener("click", function(){ $("archiveCsvFile").click(); });
+  $("archiveCsvFile").addEventListener("change", function(){
+    var file = this.files && this.files[0];
+    this.value = ""; // allow re-selecting the same file later
+    if(!file) return;
+    var reader = new FileReader();
+    reader.onload = function(){
+      var result = archiveFromCsv(String(reader.result||""));
+      if(result.warn.length){ note(result.warn.join(" ")); return; }
+      if(!result.months.length){ note("No saved months found in that file."); return; }
+      var plural = result.months.length>1 ? "s" : "";
+      if(!window.confirm("Import "+result.months.length+" saved month"+plural+" from this file? Any existing saved month with the same period will be overwritten.")) return;
+      readIdx().then(function(list){
+        result.months.forEach(function(m){
+          var ix=-1; list.forEach(function(existing,k){ if(same(existing.period,m.period)) ix=k; });
+          if(ix>-1) list[ix]=m; else list.unshift(m);
+        });
+        return store.set(IDX, JSON.stringify(list.slice(0,24)));
+      }).then(function(syncResult){
+        drawIdx();
+        note("Imported "+result.months.length+" saved month"+plural+"."+
+          (syncResult && syncResult.cloudSynced===false ? " Saved on this device, but couldn't sync to your account right now." : ""));
+      }).catch(function(){ note("That import didn't go through."); });
+    };
+    reader.onerror = function(){ note("Couldn't read that file."); };
+    reader.readAsText(file);
+  });
+
+  /* ---------------- shared team storage ---------------- */
+  var TEAM_CODE_KEY="board:teamcode";
+  try{ $("teamCode").value = window.localStorage.getItem(TEAM_CODE_KEY) || ""; }catch(e){}
+  function teamBusy(btn, busyLabel){
+    var label = btn.textContent;
+    btn.disabled = true; btn.textContent = busyLabel;
+    return function(){ btn.disabled = false; btn.textContent = label; };
+  }
+  $("btnTeamPush").addEventListener("click", function(){
+    var id = norm($("teamCode").value);
+    if(!id){ note("Enter a shared board code first — agree on one with your team."); return; }
+    try{ window.localStorage.setItem(TEAM_CODE_KEY, id); }catch(e){}
+    var done = teamBusy(this, "Pushing…");
+    readIdx().then(function(archive){
+      var payload = {
+        savedAt: Date.now(), savedBy: state.owner||"",
+        board: {period:state.period, owner:state.owner, jiraBase:state.jiraBase, note:state.note, rows:state.rows},
+        archive: archive, year: loadYear()
+      };
+      return fetch("/api/team?id="+encodeURIComponent(id), {
+        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)
+      });
+    }).then(function(r){ return r.json().catch(function(){return null;}); })
+      .then(function(j){
+        if(j && j.ok) note("Pushed to shared board \""+id+"\". Teammates can pull it with the same code.");
+        else note((j&&j.error) || "That didn't push — try again.");
+      })
+      .catch(function(){ note("Couldn't reach shared storage. If this is the GitHub Pages copy, shared storage only works on the Vercel deployment."); })
+      .then(done);
+  });
+  $("btnTeamPull").addEventListener("click", function(){
+    var id = norm($("teamCode").value);
+    if(!id){ note("Enter the shared board code your teammate used."); return; }
+    if(!window.confirm('Pull the shared board "'+id+'"? This replaces the board, saved months, and starred items currently in this browser.')) return;
+    try{ window.localStorage.setItem(TEAM_CODE_KEY, id); }catch(e){}
+    var done = teamBusy(this, "Pulling…");
+    fetch("/api/team?id="+encodeURIComponent(id))
+      .then(function(r){ return r.json().catch(function(){return null;}); })
+      .then(function(j){
+        if(!j || !j.ok){ note((j&&j.error) || "Couldn't load the shared board."); return; }
+        if(!j.data){ note("Nothing has been pushed to \""+id+"\" yet."); return; }
+        var d = j.data, b = d.board||{};
+        state.rows = (b.rows||[]).map(function(o){
+          var r=blank(); ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];}); return r;
+        });
+        state.open={}; state.period=b.period||""; state.owner=b.owner||""; state.jiraBase=b.jiraBase||""; state.note=b.note||"";
+        ensurePeriodValue(state.period);
+        $("owner").value=state.owner; $("jiraBase").value=state.jiraBase; $("note").value=state.note;
+        return store.set(IDX, JSON.stringify(d.archive||[])).then(function(){
+          saveYear(d.year||[]);
+          render(); drawIdx(); updateYearTab((d.year||[]).length);
+          note("Pulled the shared board \""+id+"\" (saved "+new Date(d.savedAt||Date.now()).toLocaleString()+").");
+        });
+      })
+      .catch(function(){ note("Couldn't reach shared storage. If this is the GitHub Pages copy, shared storage only works on the Vercel deployment."); })
+      .then(done);
+  });
+
+  /* ---------------- account (Firebase sign-in gate) ---------------- */
+  function friendlyAuthError(err){
+    var code = err && err.code;
+    if(code==="custom/domain") return err.message;
+    if(code==="auth/invalid-email") return "That doesn't look like a valid email address.";
+    if(code==="auth/missing-password" || code==="auth/weak-password") return "Password must be at least 6 characters.";
+    if(code==="auth/email-already-in-use") return "An account already exists for that email — sign in instead.";
+    if(code==="auth/invalid-credential" || code==="auth/wrong-password" || code==="auth/user-not-found") return "Email or password is incorrect.";
+    if(code==="auth/too-many-requests") return "Too many attempts — wait a bit and try again.";
+    return (err && err.message) || "Something went wrong. Try again.";
+  }
+
+  function applyCloudDoc(archive, year, board){
+    cloudSuppressed = true;
+    store.set(IDX, JSON.stringify(archive||[])).then(function(){
+      saveYear(year||[]);
+      var hasBoard = board && board.rows && board.rows.length;
+      if(hasBoard){
+        applyBoardSnapshot(board);
+        try{ window.localStorage.setItem(CURRENT_KEY, JSON.stringify(board)); }catch(e){}
+        render();
+      }
+      drawIdx(); updateYearTab((year||[]).length);
+      note("Loaded your saved months, starred items"+(hasBoard?", and current board":"")+" from your account.");
+    }).then(function(){ cloudSuppressed = false; });
+  }
+
+  function renderAccountChip(user){
+    var el = $("cloudAuth");
+    if(!el) return;
+    el.innerHTML = avatar(user.email, "Signed in") +
+      '<span class="hint">'+esc(user.email)+'</span>' +
+      '<button type="button" class="btn" id="authSignOutToolbar">Sign out</button>';
+    var out = $("authSignOutToolbar");
+    if(out) out.addEventListener("click", function(){ manualSignOut(); });
+  }
+
+  function showAuthView(view){
+    $("authLoading").hidden = view!=="loading";
+    $("authLoginForm").hidden = view!=="login";
+    $("authVerify").hidden = view!=="verify";
+    $("authGate").hidden = view==="app";
+  }
+
+  /* ---- 4-hour absolute session timeout ----
+     Firebase itself keeps the sign-in around indefinitely (browserLocalPersistence,
+     its default) so reloading the page never re-prompts for a login on its own.
+     This is a separate, app-level timer: it starts once at actual sign-in and
+     forces a sign-out (auto-saving first) 4 hours later, regardless of activity,
+     surviving page reloads since it's anchored to a stored timestamp rather than
+     a JS timer. */
+  var SESSION_KEY = "board:sessionStart";
+  var SESSION_MS = 4*60*60*1000;
+  var sessionTimer = null;
+
+  function ensureSessionStart(){
+    var v = null;
+    try{ v = window.localStorage.getItem(SESSION_KEY); }catch(e){}
+    if(!v){
+      v = String(Date.now());
+      try{ window.localStorage.setItem(SESSION_KEY, v); }catch(e){}
+    }
+    return Number(v);
+  }
+  function clearSessionStart(){ try{ window.localStorage.removeItem(SESSION_KEY); }catch(e){} }
+  function stopSessionTimer(){ if(sessionTimer){ clearInterval(sessionTimer); sessionTimer=null; } }
+  function startSessionTimer(){
+    var start = ensureSessionStart();
+    if(Date.now()-start >= SESSION_MS){ autoSaveAndSignOut(); return; }
+    stopSessionTimer();
+    sessionTimer = setInterval(function(){
+      if(Date.now()-start >= SESSION_MS) autoSaveAndSignOut();
+    }, 60000);
+  }
+  function manualSignOut(){
+    stopSessionTimer(); clearSessionStart();
+    window.MonthlyCloud.signOut();
+  }
+  function autoSaveAndSignOut(){
+    stopSessionTimer();
+    if(boardSyncTimer){ clearTimeout(boardSyncTimer); boardSyncTimer=null; }
+    try{ window.localStorage.setItem(CURRENT_KEY, JSON.stringify(currentBoardSnapshot())); }catch(e){}
+    saveCurrentMonth().catch(function(){}).then(function(){
+      return window.MonthlyCloud.syncUp();
+    }).catch(function(){}).then(function(){
+      clearSessionStart();
+      return window.MonthlyCloud.signOut();
+    }).then(function(){
+      drawIdx();
+      $("authNotice").textContent = "You were signed out after 4 hours — your board was auto-saved to Saved months.";
+    });
+  }
+
+  function handleCloudAuth(user, errMsg){
+    if(errMsg){ stopSessionTimer(); showAuthView("login"); $("authNotice").textContent = errMsg; return; }
+    if(!user){ stopSessionTimer(); showAuthView("login"); return; }
+    if(!user.emailVerified){
+      stopSessionTimer();
+      $("authVerifyEmail").textContent = user.email;
+      showAuthView("verify");
+      return;
+    }
+    showAuthView("app");
+    renderAccountChip(user);
+    startSessionTimer();
+    window.MonthlyCloud.syncDown().then(function(cloudDoc){
+      if(!cloudDoc) return;
+      var hasBoard = cloudDoc.board && cloudDoc.board.rows && cloudDoc.board.rows.length;
+      var msg = "Load your saved months, starred items"+(hasBoard?", and current board":"")+
+        " from your account? This replaces what's currently in this browser.";
+      if(!window.confirm(msg)) return;
+      applyCloudDoc(cloudDoc.archive, cloudDoc.year, cloudDoc.board);
+    });
+  }
+
+  $("authLoginForm").addEventListener("submit", function(e){
+    e.preventDefault();
+    $("authNotice").textContent = "";
+    window.MonthlyCloud.signIn($("authEmail").value, $("authPassword").value)
+      .catch(function(err){ $("authNotice").textContent = friendlyAuthError(err); });
+  });
+  $("authSignUp").addEventListener("click", function(){
+    $("authNotice").textContent = "";
+    window.MonthlyCloud.signUp($("authEmail").value, $("authPassword").value)
+      .catch(function(err){ $("authNotice").textContent = friendlyAuthError(err); });
+  });
+  $("authForgot").addEventListener("click", function(){
+    var email = $("authEmail").value;
+    if(!email){ $("authNotice").textContent = "Enter your email above first."; return; }
+    window.MonthlyCloud.resetPassword(email)
+      .then(function(){ $("authNotice").textContent = "Password reset email sent."; })
+      .catch(function(err){ $("authNotice").textContent = friendlyAuthError(err); });
+  });
+  $("authContinue").addEventListener("click", function(){
+    $("authVerifyNotice").textContent = "";
+    window.MonthlyCloud.reloadUser().then(function(user){
+      if(user && user.emailVerified) handleCloudAuth(user);
+      else $("authVerifyNotice").textContent = "Still not verified — check your email and try again.";
+    });
+  });
+  $("authResend").addEventListener("click", function(){
+    window.MonthlyCloud.resendVerification()
+      .then(function(){ $("authVerifyNotice").textContent = "Verification email sent again."; })
+      .catch(function(err){ $("authVerifyNotice").textContent = friendlyAuthError(err); });
+  });
+  $("authSignOut").addEventListener("click", function(){ manualSignOut(); });
+
+  /* ---------------- wiring ---------------- */
+  function monthLabel(d){ return d.toLocaleDateString(undefined,{month:"long",year:"numeric"}); }
+  function ensurePeriodValue(v){
+    var sel=$("period");
+    var has=Array.prototype.some.call(sel.options,function(o){return o.value===v;});
+    if(!has && v){
+      var opt=document.createElement("option");
+      opt.value=v;opt.textContent=v;
+      sel.insertBefore(opt, sel.firstChild);
+    }
+    sel.value=v;
+  }
+  function buildPeriodOptions(){
+    var sel=$("period"), base=new Date(), opts=[];
+    for(var i=3;i>=-12;i--){
+      opts.push(monthLabel(new Date(base.getFullYear(), base.getMonth()+i, 1)));
+    }
+    sel.innerHTML=opts.map(function(o){return '<option value="'+esc(o)+'">'+esc(o)+'</option>';}).join("");
+  }
+  function pull(){
+    state.period=$("period").value.trim();
+    state.owner=$("owner").value.trim();
+    state.jiraBase=$("jiraBase").value.trim();
+    state.note=$("note").value;
+    state.groupBy=$("groupBy").value;
+  }
+  $("period").addEventListener("change",function(){pull();render();});
+  ["owner","jiraBase","note"].forEach(function(id){
+    $(id).addEventListener("input",function(){pull();render();});
+  });
+  $("groupBy").addEventListener("change",function(){pull();state.closed={};render();});
+  $("filterPm").addEventListener("change",function(){ state.pmFilter=this.value; state.closed={}; render(); });
+  $("btnMine").addEventListener("click",function(){
+    state.mineOnly=!state.mineOnly;
+    this.classList.toggle("on",state.mineOnly);
+    this.innerHTML='<span class="ico">◍</span> '+(state.mineOnly?"Person: me only":"Person: everyone");
+    render();
+  });
+  var allOpen=false;
+  $("btnStories").addEventListener("click",function(){
+    allOpen=!allOpen;
+    state.open={};
+    if(allOpen) visibleRows().forEach(function(r){state.open[r._id]=true;});
+    this.classList.toggle("on",allOpen);
+    this.innerHTML='<span class="ico">▤</span> '+(allOpen?"Close all writeups":"Open all writeups");
+    if(state.view!=="board") setView("board"); else renderBoard();
+  });
+  $("btnMissing").addEventListener("click",function(){
+    var gaps=visibleRows().filter(function(r){return !hasStory(r);});
+    if(!gaps.length){ note("Every item on the board has a writeup."); return; }
+    state.open={};
+    gaps.forEach(function(r){state.open[r._id]=true;});
+    if(state.view!=="board"){ state.view="board"; setView("board"); } else renderBoard();
+    note(gaps.length+" item"+(gaps.length===1?"":"s")+" still need a writeup — they're open on the board now.");
+    var first=document.querySelector("tr.detail.on .sedit");
+    if(first){ first.scrollIntoView({behavior:"smooth",block:"center"}); first.focus(); }
+  });
+  var CHEV='<svg class="chev" width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M4 6l4 4 4-4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg> ';
+  function setCollapsed(hidden){
+    var btn=$("btnCollapse");
+    $("setup").querySelector(".card-body").style.display=hidden?"none":"";
+    btn.classList.toggle("closed",hidden);
+    btn.innerHTML=CHEV+(hidden?"Show":"Hide");
+  }
+  $("btnCollapse").addEventListener("click",function(){
+    setCollapsed($("setup").querySelector(".card-body").style.display!=="none");
+  });
+  $("btnOpen").addEventListener("click",function(){
+    setCollapsed(false);
+    $("setup").scrollIntoView({behavior:"smooth",block:"center"});
+    $("paste").focus();
+  });
+
+  function ingest(append){
+    pull();
+    var txt=$("paste").value;
+    if(!norm(txt)){note("Paste your Jira rows into the box first.");return;}
+    var res=parse(txt);
+    if(!res.rows.length){note(res.warn.join(" "));return;}
+    state.rows=append?state.rows.concat(res.rows):res.rows;
+    var seen={};
+    state.rows=state.rows.filter(function(r){
+      if(!r.key)return true;
+      if(seen[r.key])return false;
+      seen[r.key]=true;return true;
+    });
+    note(res.warn.join(" ")||"");
+    if(!res.warn.length){
+      setCollapsed(true);
+    }
+    $("paste").value="";
+    render();
+    $("dash").scrollIntoView({behavior:"smooth",block:"start"});
+  }
+  $("btnBuild").addEventListener("click",function(){ingest(false);});
+  $("btnAppend").addEventListener("click",function(){ingest(true);});
+  $("btnClear").addEventListener("click",function(){state.rows=[];render();note("");});
+
+  var SAMPLE=[
+    "Key\tPriority\tSummary\tReporter\tWO Resource\tQA Resource\tUX Designer\tProduct Manager\tPortfolio\tSprint\tFix Version/s\tWhat we were solving\tWhat shipped\tImpact to watch",
+    "BHJ-121020\tP4\tPrice Drop Badge\tAnnie Hosch\tSruly Brach\tAri Roitblat\tLeo Vassallo\tTimothy Cocores\tWeb Experience\t\tWEB-20260811v10\tShoppers had no way to tell a genuine price drop from a standing sale price, so discounted items looked the same as everything else in the grid.\tA badge on the PDP and category tiles that fires when current price falls below the trailing price, driven off existing pricing data.\tAdd-to-cart rate on badged items vs. control, and whether the badge pulls clicks away from higher-margin bundles.\t",
+    "BHJ-120848\tP4\tCompare from PDP to compare page\tMarty Weinberger\tSruly Brach\tAri Roitblat\t\tTimothy Cocores\tWeb Experience\t\tWEB-20260811v10\tCustomers could add items to compare from the category page but not from a PDP, so cross-shopping meant backing out and starting the search over.\tCompare control on the PDP that writes to the same compare tray and hands off to the compare page with the item already loaded.\tCompare page entries sourced from PDP, and session depth for users who compare.\t",
+    "BHJ-120574\tP4\tLeasing - Current Promotions - Move to Tray\tTimothy Cocores\tSruly Brach\tGavriel Kasnett\t\tTimothy Cocores\tWeb Experience\t2026 August IS\tWEB-20260811v10\tLeasing promotions sat below the fold in a spot most customers never scrolled to, so a financing option that closes big-ticket orders went unseen.\tMoved current promotions into the tray so the offer surfaces at the decision point instead of at the bottom of the page.\tLeasing application starts per PDP view on items over $1,500.\t"
+  ].join("\n");
+  $("btnSample").addEventListener("click",function(){
+    $("paste").value=SAMPLE;
+    if(!$("owner").value)$("owner").value="Timothy Cocores";
+    if(!$("period").value)ensurePeriodValue(monthLabel(new Date()));
+    ingest(false);
+  });
+
+  buildPeriodOptions();
+  ensurePeriodValue(monthLabel(new Date()));
+  $("btnMine").innerHTML='<span class="ico">◍</span> Person: everyone';
+  $("ovl").hidden=true;
+  document.body.style.overflow="";
+  // Restore the current (unsaved) board first, so the pull() right after just
+  // re-reads the same values back out of the form fields it was just given —
+  // a no-op when there's nothing to restore, unchanged from before.
+  restoreCurrentBoardFromLocal();
+  pull();
+  setView("board");
+  drawIdx();
+  updateYearTab(loadYear().length);
+
+  function initCloud(){
+    showAuthView("loading");
+    window.MonthlyCloud.onAuthChange(handleCloudAuth);
+  }
+  if(window.MonthlyCloud) initCloud();
+  else window.addEventListener("monthlycloud:ready", initCloud, {once:true});
+})();
+</script>
+</body>
+</html>
