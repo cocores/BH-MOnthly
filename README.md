@@ -13,7 +13,7 @@ Paste ticket rows (tab/comma/pipe-separated, or a raw Jira multi-line export) an
 
 Everything runs client-side in one HTML file — no build step, no backend required. Board state lives in memory for the session; use **Save this month** to persist a board to the browser's local storage and reload it later from **Saved months**.
 
-Also has a star-to-save-for-later feature (**Year in review**, for pulling together an end-of-year report) and optional shared team storage — see below.
+Also has a star-to-save-for-later feature (**Year in review**, for pulling together an end-of-year report).
 
 ### Saved months: CSV backup, restore, and loading everything at once
 
@@ -31,31 +31,13 @@ The board's grouping options (release, sprint, portfolio, priority, reporter) no
 
 Starring an item for **Year in review** before its writeup (what we were solving / what shipped / impact to watch) is filled in no longer freezes that entry blank — editing the row afterward keeps the year-in-review entry updated with the latest text.
 
-### Sharing a board with your team
-
-The **Saved months** card has a **Share with your team** section: agree on a code with your teammates (e.g. drop one in Slack), then:
-
-- **Push to team** uploads the current board, your saved months, and your starred items to that code.
-- **Pull from team** replaces everything in the browser with whatever was last pushed under that code.
-
-This is a shared code, not a login — anyone who has it can read and overwrite that board, so treat it like a shared link rather than a password.
-
-Shared storage runs on a serverless API route (`api/team.js`) backed by Vercel KV, so it only works on the Vercel deployment, not the static GitHub Pages copy. To enable it on Vercel:
-
-1. In the Vercel dashboard, open this project → **Storage** → **Create Database** → **KV** (or connect an existing one), and link it to the project.
-2. Redeploy. Vercel injects `KV_REST_API_URL` and `KV_REST_API_TOKEN` automatically — no other config needed.
-
-Without a KV store linked, Push/Pull show a message explaining shared storage isn't set up yet; everything else in the app works exactly the same.
-
 ### Cloud sync (Firebase)
 
 The whole app sits behind a sign-in screen (email + password, via Firebase Authentication), restricted to **@BHphoto.com** addresses — enforced both client-side (the form rejects other domains before ever calling Firebase) and by Firestore's own security rules (`firestore.rules`), so it holds even if the client-side check is bypassed. New accounts get a verification email and can't use the app until they click it.
 
-Once signed in, everything that keeps Main board, Dashboard, and Updates populated — the current board itself (rows, period, your name, notes, grouping) — plus your **saved months** and **starred items** also sync to your own Firestore document, so they follow you to any browser or device you sign into. The current board also saves to this browser continuously (a moment after you stop typing/editing), so a reload or reopening the tab never loses it, even without clicking `Save this month`. Signing in for the first time on a browser that already has a cloud copy asks before overwriting what's in that browser, the same way `Pull from team` does. Nothing is uploaded until your cloud copy has been read, so reopening the app can't overwrite newer edits from another device; if the two copies already match, you aren't asked at all. Next to your email in the toolbar, **Saved to account** confirms each sync, and **Not saved to account** (with an explanation) shows if Firestore rejects a write — usually because `firestore.rules` hasn't been published yet.
+Once signed in, everything that keeps Main board, Dashboard, and Updates populated — the current board itself (rows, period, your name, notes, grouping) — plus your **saved months** and **starred items** also sync to your own Firestore document, so they follow you to any browser or device you sign into. The current board also saves to this browser continuously (a moment after you stop typing/editing), so a reload or reopening the tab never loses it, even without clicking `Save this month`. Signing in for the first time on a browser that already has a cloud copy asks before overwriting what's in that browser. Nothing is uploaded until your cloud copy has been read, so reopening the app can't overwrite newer edits from another device; if the two copies already match, you aren't asked at all. Next to your email in the toolbar, **Saved to account** confirms each sync, and **Not saved to account** (with an explanation) shows if Firestore rejects a write — usually because `firestore.rules` hasn't been published yet.
 
 Signing in lasts 4 hours (tracked from the moment you sign in, independent of activity — reloading the page doesn't reset it), after which you're automatically signed out and shown the login screen again. Right before that happens, whatever's currently on the board — even if you never clicked `Save this month` — is saved into **Saved months** so nothing is lost. A normal reload or new tab in the meantime doesn't ask you to sign in again.
-
-This is entirely separate from the team-code sharing feature above — that's unaffected and still works exactly as described.
 
 To enable this on your own Firebase project:
 

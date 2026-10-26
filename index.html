@@ -361,11 +361,6 @@ tr.detail:hover td{background:var(--card)}
 .chip .n{color:var(--faint);font-size:12px}
 .chip button{border:0;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--blue);padding:2px 6px;border-radius:4px}
 .chip button:hover{background:#DCEBFB}
-.teamshare{margin-top:16px;padding-top:16px;border-top:1px solid var(--line)}
-.teamshare .tsl{font-size:12px;font-weight:700;color:var(--sub);text-transform:uppercase;letter-spacing:.03em;margin-bottom:6px}
-.teamshare .tsp{font-size:12.5px;color:var(--faint);margin:0 0 12px;max-width:70ch}
-.tsrow{display:flex;flex-wrap:wrap;gap:8px}
-.tsrow input{flex:1 1 260px}
 .foot{margin-top:34px;font-size:12px;color:var(--faint)}
 .madeby{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--faint)}
 .madeby img{height:36px;width:auto;display:block}
@@ -601,19 +596,10 @@ tr.detail:hover td{background:var(--card)}
     <div class="card-body">
       <p class="hint" style="margin-bottom:10px">Saved months live in this browser (and, when signed in, your account). <b>Export CSV</b> keeps a copy outside the browser as a backup; <b>Import CSV</b> restores from one — handy if the browser's storage ever gets cleared.</p>
       <div class="chips" id="archiveList"></div>
-      <div class="teamshare">
-        <div class="tsl">Share with your team</div>
-        <p class="tsp">Agree on a code with your teammates (e.g. in Slack). <b>Push</b> sends this board, your saved months and your starred items to that shared code. <b>Pull</b> replaces everything in this browser with whatever was last pushed. This isn't private — anyone with the code can read and overwrite it.</p>
-        <div class="tsrow">
-          <input type="text" id="teamCode" placeholder="Shared board code, e.g. acme-web-team">
-          <button class="btn outline" id="btnTeamPush">Push to team</button>
-          <button class="btn outline" id="btnTeamPull">Pull from team</button>
-        </div>
-      </div>
     </div>
   </div>
 
-  <div class="foot">Everything stays in this page unless you save, export, or push it to shared storage.</div>
+  <div class="foot">Your board saves to this browser and, when you're signed in, to your account.</div>
   <div class="madeby" style="margin-top:14px">Made by <img src="assets/samurai-logo.png" alt="samurAi"></div>
 </div>
 
@@ -2349,64 +2335,6 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     };
     reader.onerror = function(){ note("Couldn't read that file."); };
     reader.readAsText(file);
-  });
-
-  /* ---------------- shared team storage ---------------- */
-  var TEAM_CODE_KEY="board:teamcode";
-  try{ $("teamCode").value = window.localStorage.getItem(TEAM_CODE_KEY) || ""; }catch(e){}
-  function teamBusy(btn, busyLabel){
-    var label = btn.textContent;
-    btn.disabled = true; btn.textContent = busyLabel;
-    return function(){ btn.disabled = false; btn.textContent = label; };
-  }
-  $("btnTeamPush").addEventListener("click", function(){
-    var id = norm($("teamCode").value);
-    if(!id){ note("Enter a shared board code first — agree on one with your team."); return; }
-    try{ window.localStorage.setItem(TEAM_CODE_KEY, id); }catch(e){}
-    var done = teamBusy(this, "Pushing…");
-    readIdx().then(function(archive){
-      var payload = {
-        savedAt: Date.now(), savedBy: state.owner||"",
-        board: {period:state.period, owner:state.owner, jiraBase:state.jiraBase, note:state.note, rows:state.rows},
-        archive: archive, year: loadYear()
-      };
-      return fetch("/api/team?id="+encodeURIComponent(id), {
-        method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify(payload)
-      });
-    }).then(function(r){ return r.json().catch(function(){return null;}); })
-      .then(function(j){
-        if(j && j.ok) note("Pushed to shared board \""+id+"\". Teammates can pull it with the same code.");
-        else note((j&&j.error) || "That didn't push — try again.");
-      })
-      .catch(function(){ note("Couldn't reach shared storage. If this is the GitHub Pages copy, shared storage only works on the Vercel deployment."); })
-      .then(done);
-  });
-  $("btnTeamPull").addEventListener("click", function(){
-    var id = norm($("teamCode").value);
-    if(!id){ note("Enter the shared board code your teammate used."); return; }
-    if(!window.confirm('Pull the shared board "'+id+'"? This replaces the board, saved months, and starred items currently in this browser.')) return;
-    try{ window.localStorage.setItem(TEAM_CODE_KEY, id); }catch(e){}
-    var done = teamBusy(this, "Pulling…");
-    fetch("/api/team?id="+encodeURIComponent(id))
-      .then(function(r){ return r.json().catch(function(){return null;}); })
-      .then(function(j){
-        if(!j || !j.ok){ note((j&&j.error) || "Couldn't load the shared board."); return; }
-        if(!j.data){ note("Nothing has been pushed to \""+id+"\" yet."); return; }
-        var d = j.data, b = d.board||{};
-        state.rows = (b.rows||[]).map(function(o){
-          var r=blank(); ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];}); return r;
-        });
-        state.open={}; state.period=b.period||""; state.owner=b.owner||""; state.jiraBase=b.jiraBase||""; state.note=b.note||"";
-        ensurePeriodValue(state.period);
-        $("owner").value=state.owner; $("jiraBase").value=state.jiraBase; $("note").value=state.note;
-        return store.set(IDX, JSON.stringify(d.archive||[])).then(function(){
-          saveYear(d.year||[]);
-          render(); drawIdx(); updateYearTab((d.year||[]).length);
-          note("Pulled the shared board \""+id+"\" (saved "+new Date(d.savedAt||Date.now()).toLocaleString()+").");
-        });
-      })
-      .catch(function(){ note("Couldn't reach shared storage. If this is the GitHub Pages copy, shared storage only works on the Vercel deployment."); })
-      .then(done);
   });
 
   /* ---------------- account (Firebase sign-in gate) ---------------- */
