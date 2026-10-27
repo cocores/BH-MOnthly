@@ -53,7 +53,7 @@ button{font-family:inherit}
 .bhead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:8px}
 .bhead h1{font-size:27px;font-weight:800;letter-spacing:-.025em}
 .bhead .sub{font-size:13.5px;color:var(--sub);padding-bottom:4px}
-.bhead .saved{margin-left:auto;font-size:12.5px;color:var(--faint);padding-bottom:4px;display:flex;align-items:center;gap:6px}
+.bhead .saved{margin-left:auto;font-size:13.5px;font-weight:500;color:var(--sub);padding-bottom:4px;display:flex;align-items:center;gap:6px}
 .bhead .saved::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green)}
 .bhead .saved:empty{display:none}
 .tabs{display:flex;gap:2px;margin-top:16px;border-bottom:1px solid var(--line)}
@@ -818,10 +818,10 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     showLastSaved(ts, auto);
   }
   function showLastSaved(ts, auto){
-    var d = new Date(ts), now = new Date();
-    var day = d.toDateString()===now.toDateString() ? "today"
-      : d.toLocaleDateString([], {month:"short", day:"numeric", year: d.getFullYear()===now.getFullYear() ? undefined : "numeric"});
-    var text = (auto ? "Auto-saved " : "Last saved ")+day+" at "+d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    var d = new Date(ts);
+    var text = (auto ? "Last auto-save: " : "Last saved: ")+
+      d.toLocaleDateString([], {weekday:"short", month:"short", day:"numeric", year:"numeric"})+" at "+
+      d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit", second:"2-digit"});
     var full = "Last saved "+d.toLocaleString([], {dateStyle:"full", timeStyle:"short"});
     [$("lastSavedHead"), $("autosaveStatus")].forEach(function(el){ if(el){ el.textContent = text; el.title = full; } });
   }
@@ -830,8 +830,6 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     try{ v = JSON.parse(window.localStorage.getItem(LAST_SAVED_KEY) || "null"); }catch(e){}
     if(v && v.ts) showLastSaved(v.ts, v.auto);
   }
-  // Re-render once a minute so "today" rolls over to a date after midnight.
-  setInterval(restoreLastSaved, 60000);
   function applyBoardSnapshot(snap){
     state.rows = (snap.rows||[]).map(function(o){
       var r=blank(); ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];});
