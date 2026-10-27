@@ -53,6 +53,9 @@ button{font-family:inherit}
 .bhead{display:flex;align-items:flex-end;gap:12px;flex-wrap:wrap;margin-top:8px}
 .bhead h1{font-size:27px;font-weight:800;letter-spacing:-.025em}
 .bhead .sub{font-size:13.5px;color:var(--sub);padding-bottom:4px}
+.bhead .saved{margin-left:auto;font-size:12.5px;color:var(--faint);padding-bottom:4px;display:flex;align-items:center;gap:6px}
+.bhead .saved::before{content:"";width:7px;height:7px;border-radius:50%;background:var(--green)}
+.bhead .saved:empty{display:none}
 .tabs{display:flex;gap:2px;margin-top:16px;border-bottom:1px solid var(--line)}
 .tab{
   padding:9px 14px;font-size:14px;font-weight:500;color:var(--sub);cursor:pointer;
@@ -513,6 +516,7 @@ tr.detail:hover td{background:var(--card)}
   <div class="bhead">
     <h1 id="boardTitle">Monthly Delivery Board</h1>
     <div class="sub" id="boardSub">Tickets I submitted, completed this period</div>
+    <div class="saved no-print" id="lastSavedHead" role="status" aria-live="polite"></div>
   </div>
   <div class="tabs no-print">
     <button class="tab on" data-view="board">Main board</button>
@@ -595,7 +599,7 @@ tr.detail:hover td{background:var(--card)}
         <button class="btn outline" id="btnImportArchive" title="Restore saved months from a CSV backup — useful if the browser cache gets cleared">Import CSV</button>
         <button class="btn outline" id="btnSave">Save this month</button>
       </div>
-      <span class="hint" id="autosaveStatus" style="flex-basis:100%;text-align:right"></span>
+      <span class="hint" id="autosaveStatus" role="status" style="flex-basis:100%;text-align:right"></span>
       <input type="file" id="archiveCsvFile" accept=".csv,text/csv" style="display:none">
     </div>
     <div class="card-body">
@@ -798,14 +802,36 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
       drawIdx();
     }).then(function(){
       lastSavedSnap = snap;
-      var el = $("autosaveStatus");
-      if(el) el.textContent = "Auto-saved "+new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+      setLastSaved(Date.now(), true);
       return true;
     }, function(){
       boardDirty = true; // retry on the next tick
       return false;
     }).then(function(saved){ autoSaving = false; return saved; });
   }
+  // "Last saved" date/time, shown in the board header and the Saved months
+  // card. Kept in localStorage so it survives a reload.
+  var LAST_SAVED_KEY = "board:lastSaved";
+  function setLastSaved(ts, auto){
+    if(!ts) return;
+    try{ window.localStorage.setItem(LAST_SAVED_KEY, JSON.stringify({ts:ts, auto:!!auto})); }catch(e){}
+    showLastSaved(ts, auto);
+  }
+  function showLastSaved(ts, auto){
+    var d = new Date(ts), now = new Date();
+    var day = d.toDateString()===now.toDateString() ? "today"
+      : d.toLocaleDateString([], {month:"short", day:"numeric", year: d.getFullYear()===now.getFullYear() ? undefined : "numeric"});
+    var text = (auto ? "Auto-saved " : "Last saved ")+day+" at "+d.toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+    var full = "Last saved "+d.toLocaleString([], {dateStyle:"full", timeStyle:"short"});
+    [$("lastSavedHead"), $("autosaveStatus")].forEach(function(el){ if(el){ el.textContent = text; el.title = full; } });
+  }
+  function restoreLastSaved(){
+    var v = null;
+    try{ v = JSON.parse(window.localStorage.getItem(LAST_SAVED_KEY) || "null"); }catch(e){}
+    if(v && v.ts) showLastSaved(v.ts, v.auto);
+  }
+  // Re-render once a minute so "today" rolls over to a date after midnight.
+  setInterval(restoreLastSaved, 60000);
   function applyBoardSnapshot(snap){
     state.rows = (snap.rows||[]).map(function(o){
       var r=blank(); ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];});
@@ -2308,6 +2334,7 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     if(!state.rows.length){note("Add items before saving.");return;}
     saveCurrentMonth().then(function(result){
       drawIdx();
+      setLastSaved(Date.now(), false);
       if(result.cloudSynced===false) note("Saved on this device, but couldn't sync to your account right now.");
       else note("Saved.");
     }).catch(function(){note("That didn't save — export the CSV as a backup.");});
@@ -2570,6 +2597,7 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
         "Cancel keeps this browser's copy and saves it to your account instead.";
       if(!window.confirm(msg)) return window.MonthlyCloud.syncUp();
       applyCloudDoc(cloudDoc.archive, cloudDoc.year, cloudDoc.board);
+      if(cloudDoc.updatedAt && cloudDoc.updatedAt.toMillis) setLastSaved(cloudDoc.updatedAt.toMillis(), false);
       setCloudStatus("· Saved to account", false);
     }).catch(function(err){
       console.error("Cloud load failed:", err);
@@ -2735,6 +2763,7 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
   pull();
   setView("board");
   markBoardSaved();
+  restoreLastSaved();
   setInterval(autoSave, AUTOSAVE_MS);
   // Don't lose the last few seconds of typing when the tab is hidden or closed.
   document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") autoSave(); });
