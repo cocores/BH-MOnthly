@@ -21,6 +21,7 @@ The **Saved months** card has:
 
 - **Export CSV** — downloads every saved month (all rows, plus the period, month note, and save timestamp) as one CSV file, a copy that lives outside the browser entirely.
 - **Import CSV** — restores saved months from a CSV exported this way. Months in the file are merged into what's already saved (matched by period), so it's safe to import even if some months are already there. This is the backup path if the browser's storage ever gets cleared and cloud sync isn't available.
+- **Load selected to board** — check the box on any saved months and this button appears; it puts just those months onto the board together, grouped by month.
 - **Load all to board** — puts every saved month onto the board at once, grouped by month (see **Group by month** below), so you can see everything side by side instead of one month at a time.
 
 ### Grouping the board by month

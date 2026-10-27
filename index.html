@@ -361,6 +361,9 @@ tr.detail:hover td{background:var(--card)}
 .chip .n{color:var(--faint);font-size:12px}
 .chip button{border:0;background:transparent;cursor:pointer;font-size:12px;font-weight:600;color:var(--blue);padding:2px 6px;border-radius:4px}
 .chip button:hover{background:#DCEBFB}
+.chip label{display:inline-flex;align-items:center;gap:8px;cursor:pointer}
+.chip input[type=checkbox]{margin:0;width:15px;height:15px;accent-color:var(--blue);cursor:pointer}
+.chip.sel{background:#DCEBFB}
 .foot{margin-top:34px;font-size:12px;color:var(--faint)}
 .madeby{display:flex;align-items:center;gap:8px;font-size:12px;color:var(--faint)}
 .madeby img{height:36px;width:auto;display:block}
@@ -586,6 +589,7 @@ tr.detail:hover td{background:var(--card)}
     <div class="card-head">
       <h2>Saved months</h2>
       <div style="margin-left:auto;display:flex;gap:8px;flex-wrap:wrap">
+        <button class="btn outline" id="btnLoadSelected" style="display:none" title="Load the checked months onto the board together, grouped by month">Load selected to board</button>
         <button class="btn outline" id="btnLoadAllArchive" title="Load every saved month onto the board at once, grouped by month">Load all to board</button>
         <button class="btn outline" id="btnExportArchive" title="Download all saved months as a CSV backup">Export CSV</button>
         <button class="btn outline" id="btnImportArchive" title="Restore saved months from a CSV backup — useful if the browser cache gets cleared">Import CSV</button>
@@ -2184,9 +2188,10 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
     $("archive").hidden=false;
     readIdx().then(function(list){
       $("archiveList").innerHTML=list.length?list.map(function(m,i){
-        return '<span class="chip">'+esc(m.period||"Untitled")+' <span class="n">'+m.rows.length+'</span>'+
+        return '<span class="chip"><label><input type="checkbox" data-pick="'+i+'"'+(picked[m.period||"Untitled"]?" checked":"")+' aria-label="Select '+esc(m.period||"Untitled")+'">'+esc(m.period||"Untitled")+'</label> <span class="n">'+m.rows.length+'</span>'+
           '<button data-load="'+i+'">load</button><button data-drop="'+i+'">remove</button></span>';
       }).join(""):'<span style="color:var(--faint)">Nothing saved yet. Save a month and it will be here next time you open this page.</span>';
+      updatePicked();
     });
   }
   document.addEventListener("click",function(e){
@@ -2210,27 +2215,62 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
       }
     });
   });
+  // Checkboxes on the Saved months chips: "Load selected to board" shows
+  // once any are checked.
+  var picked = {}; // checked months by period, so autosave's redraws keep them checked
+  function pickedIndexes(){
+    return [].slice.call(document.querySelectorAll("#archiveList input[data-pick]:checked"))
+      .map(function(cb){ return +cb.dataset.pick; });
+  }
+  function updatePicked(){
+    var n = pickedIndexes().length, btn = $("btnLoadSelected");
+    btn.style.display = n ? "" : "none";
+    btn.textContent = "Load selected to board"+(n?" ("+n+")":"");
+    [].forEach.call(document.querySelectorAll("#archiveList input[data-pick]"), function(cb){
+      cb.closest(".chip").classList.toggle("sel", cb.checked);
+    });
+  }
+  $("archiveList").addEventListener("change", function(e){
+    if(e.target.dataset.pick===undefined) return;
+    var label = e.target.closest("label").textContent;
+    if(e.target.checked) picked[label]=true; else delete picked[label];
+    updatePicked();
+  });
+  $("btnLoadSelected").addEventListener("click", function(){
+    var idx = pickedIndexes();
+    readIdx().then(function(list){
+      var months = idx.map(function(i){ return list[i]; }).filter(Boolean);
+      if(!months.length){ note("Check one or more saved months first."); return; }
+      if(!window.confirm("Load "+months.length+" saved month"+(months.length>1?"s":"")+" onto the board, grouped by month? This replaces what's currently on the board.")) return;
+      loadMonthsToBoard(months);
+      picked = {};
+      drawIdx();
+    });
+  });
   $("btnLoadAllArchive").addEventListener("click", function(){
     readIdx().then(function(list){
       if(!list.length){ note("No saved months yet — nothing to load."); return; }
       if(!window.confirm("Load all "+list.length+" saved month"+(list.length>1?"s":"")+" onto the board, grouped by month? This replaces what's currently on the board.")) return;
-      var combined=[];
-      list.forEach(function(m){
-        var ts = m.saved || Date.parse(m.period) || 0;
-        (m.rows||[]).forEach(function(o){
-          var r=blank();
-          ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];});
-          r._period = m.period || "Untitled";
-          r._periodTs = ts;
-          combined.push(r);
-        });
-      });
-      state.rows=combined; state.open={}; state.closed={};
-      state.groupBy="month"; $("groupBy").value="month";
-      setView("board");
-      note("Loaded "+list.length+" saved month"+(list.length>1?"s":"")+" onto the board, grouped by month.");
+      loadMonthsToBoard(list);
     });
   });
+  function loadMonthsToBoard(list){
+    var combined=[];
+    list.forEach(function(m){
+      var ts = m.saved || Date.parse(m.period) || 0;
+      (m.rows||[]).forEach(function(o){
+        var r=blank();
+        ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];});
+        r._period = m.period || "Untitled";
+        r._periodTs = ts;
+        combined.push(r);
+      });
+    });
+    state.rows=combined; state.open={}; state.closed={};
+    state.groupBy="month"; $("groupBy").value="month";
+    setView("board");
+    note("Loaded "+list.length+" saved month"+(list.length>1?"s":"")+" onto the board, grouped by month.");
+  }
   // Shared by the manual "Save this month" button and the session-timeout
   // auto-save below, so the two stay in sync.
   function saveCurrentMonth(){
