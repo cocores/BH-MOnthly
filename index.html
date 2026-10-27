@@ -591,6 +591,7 @@ tr.detail:hover td{background:var(--card)}
         <button class="btn outline" id="btnImportArchive" title="Restore saved months from a CSV backup — useful if the browser cache gets cleared">Import CSV</button>
         <button class="btn outline" id="btnSave">Save this month</button>
       </div>
+      <span class="hint" id="autosaveStatus" style="flex-basis:100%;text-align:right"></span>
       <input type="file" id="archiveCsvFile" accept=".csv,text/csv" style="display:none">
     </div>
     <div class="card-body">
@@ -768,23 +769,44 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
      persisting this one snapshot keeps all three populated across a reload
      or a different device, same as Saved months / Year in review already do. */
   var CURRENT_KEY = "board:current";
-  var boardSyncTimer = null;
+  var AUTOSAVE_MS = 10000;
+  var boardDirty = false, lastSavedSnap = null, autoSaving = false;
   function currentBoardSnapshot(){
     return {rows:state.rows, period:state.period, owner:state.owner, jiraBase:state.jiraBase, note:state.note,
       groupBy:state.groupBy, mineOnly:state.mineOnly, pmFilter:state.pmFilter};
   }
-  function persistCurrentBoard(){
-    if(cloudSuppressed) return;
-    try{ window.localStorage.setItem(CURRENT_KEY, JSON.stringify(currentBoardSnapshot())); }catch(e){}
-    if(window.MonthlyCloud) window.MonthlyCloud.syncUp();
-  }
-  function scheduleBoardSync(){
-    if(boardSyncTimer) clearTimeout(boardSyncTimer);
-    boardSyncTimer = setTimeout(persistCurrentBoard, 1500);
+  // Edits only mark the board dirty; autoSave() (every AUTOSAVE_MS, plus
+  // when the tab is hidden/closed) does the actual saving, and only if the
+  // board really changed since the last save.
+  function scheduleBoardSync(){ boardDirty = true; }
+  function markBoardSaved(){ lastSavedSnap = JSON.stringify(currentBoardSnapshot()); boardDirty = false; }
+  function autoSave(){
+    if(!boardDirty || autoSaving || cloudSuppressed) return Promise.resolve(false);
+    var snap = JSON.stringify(currentBoardSnapshot());
+    boardDirty = false;
+    if(snap === lastSavedSnap) return Promise.resolve(false);
+    try{ window.localStorage.setItem(CURRENT_KEY, snap); }catch(e){}
+    autoSaving = true;
+    // saveCurrentMonth also writes Saved months, which syncs to the account;
+    // an empty board has nothing to save there, so sync the board directly.
+    return saveCurrentMonth().then(function(result){
+      if(!result.saved && window.MonthlyCloud) return window.MonthlyCloud.syncUp();
+      drawIdx();
+    }).then(function(){
+      lastSavedSnap = snap;
+      var el = $("autosaveStatus");
+      if(el) el.textContent = "Auto-saved "+new Date().toLocaleTimeString([], {hour:"numeric", minute:"2-digit"});
+      return true;
+    }, function(){
+      boardDirty = true; // retry on the next tick
+      return false;
+    }).then(function(saved){ autoSaving = false; return saved; });
   }
   function applyBoardSnapshot(snap){
     state.rows = (snap.rows||[]).map(function(o){
-      var r=blank(); ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];}); return r;
+      var r=blank(); ALL_FIELDS.forEach(function(f){if(o[f]!==undefined)r[f]=o[f];});
+      if(o._period){ r._period=o._period; r._periodTs=o._periodTs; }
+      return r;
     });
     state.period=snap.period||""; state.owner=snap.owner||""; state.jiraBase=snap.jiraBase||""; state.note=snap.note||"";
     state.groupBy=snap.groupBy||"fix"; state.mineOnly=!!snap.mineOnly; state.pmFilter=snap.pmFilter||"";
@@ -2214,10 +2236,28 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
   function saveCurrentMonth(){
     if(!store || !state.rows.length) return Promise.resolve({saved:false});
     return readIdx().then(function(list){
-      var e={period:state.period||new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"}),note:state.note,rows:state.rows,saved:Date.now()};
-      var ix=-1;
-      list.forEach(function(m,k){if(same(m.period,e.period))ix=k;});
-      if(ix>-1)list[ix]=e;else list.unshift(e);
+      function indexOfPeriod(p){ var ix=-1; list.forEach(function(m,k){if(same(m.period,p))ix=k;}); return ix; }
+      var multi = state.rows.some(function(r){ return r._period; });
+      if(multi){
+        // "Load all to board" view: each row goes back to the month it came
+        // from (keeping that month's note), instead of merging every month
+        // into one entry.
+        var byPeriod={}, order=[];
+        state.rows.forEach(function(r){
+          var p=r._period||"Untitled";
+          if(!byPeriod[p]){ byPeriod[p]=[]; order.push(p); }
+          byPeriod[p].push(r);
+        });
+        order.forEach(function(p){
+          var ix=indexOfPeriod(p);
+          var e={period:p, note:ix>-1?list[ix].note:"", rows:byPeriod[p], saved:Date.now()};
+          if(ix>-1)list[ix]=e;else list.unshift(e);
+        });
+      }else{
+        var e={period:state.period||new Date().toLocaleDateString(undefined,{month:"long",year:"numeric"}),note:state.note,rows:state.rows,saved:Date.now()};
+        var ix=indexOfPeriod(e.period);
+        if(ix>-1)list[ix]=e;else list.unshift(e);
+      }
       return store.set(IDX,JSON.stringify(list.slice(0,24)));
     }).then(function(result){
       return {saved:true, cloudSynced: result && result.cloudSynced};
@@ -2358,6 +2398,7 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
         applyBoardSnapshot(board);
         try{ window.localStorage.setItem(CURRENT_KEY, JSON.stringify(board)); }catch(e){}
         render();
+        markBoardSaved(); // pulled from the account, not new input
       }
       drawIdx(); updateYearTab((year||[]).length);
       note("Loaded your saved months, starred items"+(hasBoard?", and current board":"")+" from your account.");
@@ -2418,7 +2459,6 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
   }
   function autoSaveAndSignOut(){
     stopSessionTimer();
-    if(boardSyncTimer){ clearTimeout(boardSyncTimer); boardSyncTimer=null; }
     try{ window.localStorage.setItem(CURRENT_KEY, JSON.stringify(currentBoardSnapshot())); }catch(e){}
     saveCurrentMonth().catch(function(){}).then(function(){
       return window.MonthlyCloud.syncUp();
@@ -2654,6 +2694,11 @@ window.dispatchEvent(new CustomEvent("monthlycloud:ready"));
   restoreCurrentBoardFromLocal();
   pull();
   setView("board");
+  markBoardSaved();
+  setInterval(autoSave, AUTOSAVE_MS);
+  // Don't lose the last few seconds of typing when the tab is hidden or closed.
+  document.addEventListener("visibilitychange", function(){ if(document.visibilityState==="hidden") autoSave(); });
+  window.addEventListener("pagehide", function(){ autoSave(); });
   drawIdx();
   updateYearTab(loadYear().length);
 
